@@ -14,7 +14,7 @@ const response = await fetch("http://0.0.0.0:3000/stark_vrf", {
   headers: {
     "Content-Type": "application/json",
   },
-  body: JSON.stringify({ seed: ["5733e5c2c8030bc06888747525b1a1f0242ca770c9387b58a4529df0ca55499"] }),
+  body: JSON.stringify({ seed: ["0x5733e5c2c8030bc06888747525b1a1f0242ca770c9387b58a4529df0ca55499"] }),
 });
 const json = await response.json();
 ```
