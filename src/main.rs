@@ -18,7 +18,7 @@ use tracing::debug;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// Secret key as a u64
+    /// Secret key
     #[arg(short, long, required = true)]
     secret_key: u64,
 }
@@ -34,10 +34,14 @@ struct InfoResult {
     public_key_y: String,
 }
 
-async fn vrf_info() -> Json<InfoResult> {
+fn get_secret_key() -> String {
     let args = Args::parse();
-    let secret_key = args.secret_key.to_string().parse().unwrap();
-    let public_key = generate_public_key(secret_key);
+    args.secret_key.to_string()
+}
+
+async fn vrf_info() -> Json<InfoResult> {
+    let secret_key = get_secret_key();
+    let public_key = generate_public_key(secret_key.parse().unwrap());
 
     Json(InfoResult {
         public_key_x: format(public_key.x),
@@ -52,9 +56,8 @@ struct JsonResult {
 
 async fn stark_vrf(extract::Json(payload): extract::Json<StarkVrfRequest>) -> Json<JsonResult> {
     debug!("received payload {payload:?}");
-    let args = Args::parse();
-    let secret_key = args.secret_key.to_string().parse().unwrap();
-    let public_key = generate_public_key(secret_key);
+    let secret_key = get_secret_key();
+    let public_key = generate_public_key(secret_key.parse().unwrap());
 
     println!("public key {public_key}");
 
@@ -69,7 +72,9 @@ async fn stark_vrf(extract::Json(payload): extract::Json<StarkVrfRequest>) -> Js
         .collect();
 
     let ecvrf = StarkVRF::new(public_key).unwrap();
-    let proof = ecvrf.prove(&secret_key, seed.as_slice()).unwrap();
+    let proof = ecvrf
+        .prove(&secret_key.parse().unwrap(), seed.as_slice())
+        .unwrap();
     let sqrt_ratio_hint = ecvrf.hash_to_sqrt_ratio_hint(seed.as_slice());
     let rnd = ecvrf.proof_to_hash(&proof).unwrap();
 
