@@ -5,14 +5,23 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use clap::Parser;
 use num::{BigInt, Num};
 use oracle::*;
 use serde::{Deserialize, Serialize};
-use stark_vrf::{generate_public_key, BaseField, ScalarValue, StarkVRF};
+use stark_vrf::{generate_public_key, BaseField, StarkVRF};
 use std::str::FromStr;
 use tokio::signal;
 use tower_http::trace::TraceLayer;
 use tracing::debug;
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Secret key as a u64
+    #[arg(short, long, required = true)]
+    secret_key: u64,
+}
 
 fn format<T: std::fmt::Display>(v: T) -> String {
     let int = BigInt::from_str(&format!("{v}")).unwrap();
@@ -24,8 +33,10 @@ struct InfoResult {
     public_key_x: String,
     public_key_y: String,
 }
+
 async fn vrf_info() -> Json<InfoResult> {
-    let secret_key = ScalarValue!("190");
+    let args = Args::parse();
+    let secret_key = args.secret_key.to_string().parse().unwrap();
     let public_key = generate_public_key(secret_key);
 
     Json(InfoResult {
@@ -41,7 +52,8 @@ struct JsonResult {
 
 async fn stark_vrf(extract::Json(payload): extract::Json<StarkVrfRequest>) -> Json<JsonResult> {
     debug!("received payload {payload:?}");
-    let secret_key = ScalarValue!("190");
+    let args = Args::parse();
+    let secret_key = args.secret_key.to_string().parse().unwrap();
     let public_key = generate_public_key(secret_key);
 
     println!("public key {public_key}");
@@ -83,6 +95,8 @@ async fn stark_vrf(extract::Json(payload): extract::Json<StarkVrfRequest>) -> Js
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
+    Args::parse();
+
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .init();
