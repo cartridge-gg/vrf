@@ -1137,7 +1137,7 @@ dependencies = [
 [[package]]
 name = "stark-vrf"
 version = "0.1.0"
-source = "git+https://github.com/reilabs/stark-vrf.git?branch=fix-pk#dde1d6277e1dd4d1280ae99d27781e7ea515516b"
+source = "git+https://github.com/dojoengine/stark-vrf.git#96d6d2a88b1ef46c4a285d0ccc334237205edae3"
 dependencies = [
  "ark-ec",
  "ark-ff",
