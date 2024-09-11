@@ -10,6 +10,7 @@ use oracle::*;
 use serde::{Deserialize, Serialize};
 use stark_vrf::{generate_public_key, BaseField, ScalarValue, StarkVRF};
 use std::str::FromStr;
+use tokio::signal;
 use tower_http::trace::TraceLayer;
 use tracing::debug;
 
@@ -86,7 +87,12 @@ async fn main() {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
+    async fn index() -> &'static str {
+        "OK"
+    }
+
     let app = Router::new()
+        .route("/", get(index))
         .route("/info", get(vrf_info))
         .route("/stark_vrf", post(stark_vrf))
         .layer(TraceLayer::new_for_http());
@@ -94,6 +100,35 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
         .await
         .expect("Failed to bind to port 3000, port already in use by another process. Change the port or terminate the other process.");
+
     debug!("Server started on http://0.0.0.0:3000");
-    axum::serve(listener, app).await.unwrap();
+
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
 }
