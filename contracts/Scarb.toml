@@ -1,0 +1,21 @@
+[package]
+name = "vrf_contracts"
+version = "0.1.0"
+edition = "2023_10"
+
+# See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
+
+[dependencies]
+starknet = "2.7.0"
+stark_vrf = { git = "https://github.com/dojoengine/stark-vrf.git"}
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", rev = "a13bae3" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.26.0" }
+
+[dev-dependencies]
+openzeppelin_testing = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", rev = "a13bae3" }
+openzeppelin_utils = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", rev = "a13bae3" }
+
+[[target.starknet-contract]]
+allowed-libfuncs-list.name = "experimental"
+
+[lib]
