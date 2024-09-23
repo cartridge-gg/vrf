@@ -19,3 +19,6 @@ openzeppelin_utils = { git = "https://github.com/OpenZeppelin/cairo-contracts.gi
 allowed-libfuncs-list.name = "experimental"
 
 [lib]
+
+[script]
+test = "snforge test"
