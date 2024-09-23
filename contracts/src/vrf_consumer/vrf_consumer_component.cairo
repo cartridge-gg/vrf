@@ -113,7 +113,7 @@ pub mod VrfConsumerComponent {
             calldata.serialize(ref serialized);
 
             // get seed for call
-            let seed = self.get_seed_for_call('predict', serialized);
+            let seed = self.get_seed_for_call(entrypoint, serialized);
 
             // get committed seed
             let committed = self.get_commit();
