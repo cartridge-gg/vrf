@@ -8,7 +8,9 @@ pub mod vrf_consumer {
     pub mod vrf_consumer_example;
 }
 
-
 #[cfg(test)]
-mod tests;
+pub mod tests {
+    pub mod common;
+    pub mod test_dice;
+}
 
