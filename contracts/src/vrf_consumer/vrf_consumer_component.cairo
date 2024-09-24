@@ -6,8 +6,6 @@ use vrf_contracts::vrf_provider::vrf_provider_component::{PublicKey, RequestStat
 #[starknet::interface]
 trait IVrfConsumer<TContractState> {
     fn get_vrf_provider(self: @TContractState) -> ContractAddress;
-    fn set_vrf_provider(ref self: TContractState, vrf_provider: ContractAddress);
-
     fn get_vrf_provider_public_key(self: @TContractState) -> PublicKey;
 }
 
@@ -19,10 +17,6 @@ pub mod VrfConsumerComponent {
         get_contract_address
     };
     use starknet::storage::Map;
-
-    use openzeppelin::access::ownable::{
-        OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl
-    };
 
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
@@ -58,19 +52,9 @@ pub mod VrfConsumerComponent {
         TContractState,
         +Drop<TContractState>,
         +HasComponent<TContractState>,
-        impl Owner: OwnableComponent::HasComponent<TContractState>,
     > of super::IVrfConsumer<ComponentState<TContractState>> {
         fn get_vrf_provider(self: @ComponentState<TContractState>) -> ContractAddress {
             self.VrfConsumer_vrf_provider.read()
-        }
-
-        fn set_vrf_provider(
-            ref self: ComponentState<TContractState>, vrf_provider: ContractAddress
-        ) {
-            let mut ownable_component = get_dep_component_mut!(ref self, Owner);
-            ownable_component.assert_only_owner();
-
-            self._set_vrf_provider(vrf_provider);
         }
 
         fn get_vrf_provider_public_key(self: @ComponentState<TContractState>) -> PublicKey {
@@ -85,7 +69,7 @@ pub mod VrfConsumerComponent {
         TContractState, +HasComponent<TContractState>
     > of InternalTrait<TContractState> {
         fn initializer(ref self: ComponentState<TContractState>, vrf_provider: ContractAddress) {
-            self._set_vrf_provider(vrf_provider);
+            self.set_vrf_provider(vrf_provider);
         }
 
         fn vrf_provider_disp(self: @ComponentState<TContractState>,) -> IVrfProviderDispatcher {
@@ -137,7 +121,7 @@ pub mod VrfConsumerComponent {
             random
         }
 
-        fn _set_vrf_provider(
+        fn set_vrf_provider(
             ref self: ComponentState<TContractState>, new_vrf_provider: ContractAddress
         ) {
             assert(new_vrf_provider != ContractAddressZeroable::zero(), Errors::ADDRESS_ZERO);

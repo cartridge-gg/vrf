@@ -10,6 +10,8 @@ pub struct PredictParams {
 trait IVrfConsumerExample<TContractState> {
     fn predict(ref self: TContractState, params: PredictParams);
     fn get_score(self: @TContractState, player: starknet::ContractAddress) -> u32;
+
+    fn set_vrf_provider(ref self: TContractState, new_vrf_provider: starknet::ContractAddress);
 }
 
 #[starknet::contract]
@@ -65,7 +67,6 @@ mod VrfConsumer {
 
     #[abi(embed_v0)]
     impl ConsumerImpl of super::IVrfConsumerExample<ContractState> {
-
         // - with controller & paymaster :
         // retrieve caller nonce with vrf_provider.get_nonce(caller)
         // then in a multicall :
@@ -77,7 +78,7 @@ mod VrfConsumer {
         // - without controller & paymaster
         // retrieve caller nonce with vrf_provider.get_nonce(caller)
         // call vrf_provider.request_random( consumer_contract, entrypoint, calldata, nonce)
-        // wait for request to be fulfilled 
+        // wait for request to be fulfilled
         // call consumer_contract.entrypoint(calldata)
 
         fn predict(ref self: ContractState, params: PredictParams) {
@@ -98,6 +99,11 @@ mod VrfConsumer {
 
         fn get_score(self: @ContractState, player: ContractAddress) -> u32 {
             self.scores.read(player)
+        }
+
+        fn set_vrf_provider(ref self: ContractState, new_vrf_provider: ContractAddress) {
+            self.ownable.assert_only_owner();
+            self.vrf_consumer.set_vrf_provider(new_vrf_provider);
         }
     }
 
