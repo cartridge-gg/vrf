@@ -43,7 +43,7 @@ trait IVrfProvider<TContractState> {
 //
 //
 
-#[derive(Drop, Clone, Serde)]
+#[derive(Debug, Drop, Clone, Serde)]
 pub struct Request {
     consumer: ContractAddress,
     caller: ContractAddress,
@@ -64,6 +64,7 @@ impl RequestImpl of RequestTrait {
 
 #[derive(Drop, Copy, Clone, Serde, PartialEq, starknet::Store)]
 pub enum RequestStatus {
+    #[default]
     None,
     Received,
     Fulfilled,
@@ -90,7 +91,7 @@ impl PublicKeyIntoPoint of Into<PublicKey, Point> {
 pub mod VrfProviderComponent {
     use starknet::ContractAddress;
     use starknet::get_caller_address;
-    use starknet::storage::Map;
+    use starknet::storage::{ StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map};
 
     use openzeppelin::access::ownable::{
         OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl
@@ -190,7 +191,13 @@ pub mod VrfProviderComponent {
             let seed = request.hash();
             self.commit(consumer, caller, seed);
 
-            self.VrfProvider_request_status.write(seed, RequestStatus::Received);
+            // println!("request_random: {:?}", request);
+            // println!("seed: {:?}", seed);
+
+            if self.get_status(seed) == RequestStatus::None {
+                self.VrfProvider_request_status.write(seed, RequestStatus::Received);
+            }
+
             self
                 .emit(
                     RequestRandom {
@@ -208,9 +215,6 @@ pub mod VrfProviderComponent {
 
         // called by executors
         fn submit_random(ref self: ComponentState<TContractState>, seed: felt252, proof: Proof) {
-            // TODO: check allowed ?
-            // self.accesscontrol.assert_only_executor();
-
             // check status
             let curr_status = self.VrfProvider_request_status.read(seed);
             assert(curr_status != RequestStatus::Fulfilled, Errors::ALREADY_FULFILLED);
@@ -239,10 +243,14 @@ pub mod VrfProviderComponent {
             let consumer = get_caller_address();
 
             let nonce = self.VrfProvider_nonces.read((consumer, caller));
-
             let request = Request { consumer, caller, entrypoint, calldata, nonce };
 
-            request.hash()
+            let seed = request.hash();
+
+            // println!("get_seed_for_call: {:?}", request);
+            // println!("seed: {:?}", seed);
+
+            seed
         }
 
         fn get_commit(

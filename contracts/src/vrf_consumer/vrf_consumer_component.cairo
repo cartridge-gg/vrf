@@ -91,7 +91,7 @@ pub mod VrfConsumerComponent {
         }
 
         fn assert_call_match_commit<T, +Drop<T>, +Serde<T>>(
-            self: @ComponentState<TContractState>, entrypoint: felt252, calldata: T
+            self: @ComponentState<TContractState>, entrypoint: felt252, calldata: @T
         ) -> felt252 {
             let mut serialized = array![];
             calldata.serialize(ref serialized);

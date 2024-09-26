@@ -42,8 +42,8 @@ pub struct SetupResult {
 // hex seed: 6B440283D175E739D7576952E07F8E5F4DCB50CD3306980AB467701EBE036D7
 
 // MUST give seed as hex string
-// curl -d '{"seed":["0x6B440283D175E739D7576952E07F8E5F4DCB50CD3306980AB467701EBE036D7"]}' -H "Content-Type: application/json" http://localhost:3000/stark_vrf
-// {
+// curl -d '{"seed":["0x6B440283D175E739D7576952E07F8E5F4DCB50CD3306980AB467701EBE036D7"]}' -H
+// "Content-Type: application/json" http://localhost:3000/stark_vrf {
 //     "result": {
 //       "gamma_x": "0x1d62b9f8ca67b4b0be877d129ddcdcfde0155a5770bd10531567a38bc59af7e",
 //       "gamma_y": "0x165932086b2c4f6d8aec5dd0e802739d3020a7b82c05f1022f8b62aef408931",
@@ -71,8 +71,8 @@ fn proof_predict_7() -> Proof {
 // hex seed: 749EFA1A613B8F5498F478B99BE33679FDACAB988418A5EB6994ECDF0FEFAAD
 
 // MUST give seed as hex string
-// curl -d '{"seed":["0x749EFA1A613B8F5498F478B99BE33679FDACAB988418A5EB6994ECDF0FEFAAD"]}' -H "Content-Type: application/json" http://localhost:3000/stark_vrf
-// {
+// curl -d '{"seed":["0x749EFA1A613B8F5498F478B99BE33679FDACAB988418A5EB6994ECDF0FEFAAD"]}' -H
+// "Content-Type: application/json" http://localhost:3000/stark_vrf {
 //     "result":{
 //        "gamma_x":"0x66416aa1032b6ce0d7821246d5665600801610f37582fd442d6df0fae0d2711",
 //        "gamma_y":"0x27b5c9576c1794394466006eb01140ca5165068dd97f7c40929d2a87c0c9461",
@@ -120,8 +120,6 @@ pub fn setup() -> SetupResult {
         consumer: IVrfConsumerExampleDispatcher { contract_address: CONSUMER() },
     }
 }
-
-
 
 
 #[test]
