@@ -2,13 +2,11 @@ use starknet::ContractAddress;
 use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 use vrf_contracts::vrf_provider::vrf_provider_component::{PublicKey, RequestStatus};
 
-
 #[starknet::interface]
 trait IVrfConsumer<TContractState> {
     fn get_vrf_provider(self: @TContractState) -> ContractAddress;
     fn get_vrf_provider_public_key(self: @TContractState) -> PublicKey;
 }
-
 
 #[starknet::component]
 pub mod VrfConsumerComponent {
@@ -44,7 +42,6 @@ pub mod VrfConsumerComponent {
     pub mod Errors {
         pub const ADDRESS_ZERO: felt252 = 'VrfConsumer: address is zero';
         pub const COMMIT_MISMATCH: felt252 = 'VrfConsumer: commit mismatch';
-        pub const REQUEST_NOT_FULFILLED: felt252 = 'VrfConsumer: not fulfilled';
     }
 
     #[embeddable_as(VrfConsumerImpl)]
@@ -90,9 +87,9 @@ pub mod VrfConsumerComponent {
             self.vrf_provider_disp().get_commit(consumer, caller)
         }
 
-        fn assert_call_match_commit<T, +Drop<T>, +Serde<T>>(
+        fn consume_random<T, +Drop<T>, +Serde<T>>(
             self: @ComponentState<TContractState>, entrypoint: felt252, calldata: @T
-        ) -> felt252 {
+        ) -> (felt252, felt252) {
             let mut serialized = array![];
             calldata.serialize(ref serialized);
 
@@ -102,23 +99,15 @@ pub mod VrfConsumerComponent {
             // get committed seed
             let committed = self.get_commit();
 
+            // check call matches commit
             assert(seed == committed, Errors::COMMIT_MISMATCH);
 
-            seed
-        }
-
-        fn assert_fulfilled_and_consume(
-            self: @ComponentState<TContractState>, seed: felt252
-        ) -> felt252 {
             let caller = get_caller_address();
-
-            let status = self.vrf_provider_disp().get_status(seed);
-            assert(status == RequestStatus::Fulfilled, Errors::REQUEST_NOT_FULFILLED);
 
             // consume random & uncommit caller
             let random = self.vrf_provider_disp().consume_random(caller, seed);
 
-            random
+            (seed, random)
         }
 
         fn set_vrf_provider(

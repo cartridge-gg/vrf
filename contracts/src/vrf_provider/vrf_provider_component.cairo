@@ -91,7 +91,9 @@ impl PublicKeyIntoPoint of Into<PublicKey, Point> {
 pub mod VrfProviderComponent {
     use starknet::ContractAddress;
     use starknet::get_caller_address;
-    use starknet::storage::{ StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map};
+    use starknet::storage::{
+        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map
+    };
 
     use openzeppelin::access::ownable::{
         OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl
@@ -150,8 +152,8 @@ pub mod VrfProviderComponent {
         pub const PUBKEY_ZERO: felt252 = 'VrfProvider: pubkey is zero';
         pub const INVALID_NONCE: felt252 = 'VrfProvider: invalid nonce';
         pub const ALREADY_COMMITTED: felt252 = 'VrfProvider: already committed';
-        pub const ALREADY_REQUESTED: felt252 = 'VrfProvider: already requested';
         pub const ALREADY_FULFILLED: felt252 = 'VrfProvider: already fulfilled';
+        pub const REQUEST_NOT_FULFILLED: felt252 = 'VrfConsumer: not fulfilled';
     }
 
     #[embeddable_as(VrfProviderImpl)]
@@ -169,7 +171,7 @@ pub mod VrfProviderComponent {
             self.VrfProvider_nonces.read((consumer, caller)) + 1
         }
 
-        // directly called by user to request randomness for a contract / entrypoint / calldata
+        // directly called by user to request randomness for a consumer / entrypoint / calldata
         fn request_random(
             ref self: ComponentState<TContractState>,
             consumer: ContractAddress,
@@ -236,7 +238,26 @@ pub mod VrfProviderComponent {
             self.emit(SubmitRandom { seed, proof });
         }
 
-        // called by consumer contract to retrieve current seed for for a consumer / entrypoint / calldata / caller 
+        // note: consumer contract can consume for any caller
+        fn consume_random(
+            ref self: ComponentState<TContractState>, caller: ContractAddress, seed: felt252
+        ) -> felt252 {
+            // check if request is fulfilled
+            let status = self.get_status(seed);
+            assert(status == RequestStatus::Fulfilled, Errors::REQUEST_NOT_FULFILLED);
+
+            let consumer = get_caller_address();
+
+            // clear caller commit for a consumer
+            self.clear_commit(consumer, caller);
+
+            let random = self.VrfProvider_request_random.read(seed);
+
+            random
+        }
+
+        // called by consumer contract to retrieve current seed for for a consumer / entrypoint /
+        // calldata / caller
         fn get_seed_for_call(
             self: @ComponentState<TContractState>,
             caller: ContractAddress,
@@ -266,20 +287,6 @@ pub mod VrfProviderComponent {
 
         fn get_status(self: @ComponentState<TContractState>, seed: felt252) -> RequestStatus {
             self.VrfProvider_request_status.read(seed)
-        }
-
-        // note: caller contract can consume for any caller
-        fn consume_random(
-            ref self: ComponentState<TContractState>, caller: ContractAddress, seed: felt252
-        ) -> felt252 {
-            let consumer = get_caller_address();
-
-            // clear user commit
-            self.clear_commit(consumer, caller);
-
-            let random = self.VrfProvider_request_random.read(seed);
-
-            random
         }
 
         fn get_random(self: @ComponentState<TContractState>, seed: felt252) -> felt252 {

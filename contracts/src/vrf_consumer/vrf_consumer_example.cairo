@@ -83,10 +83,8 @@ mod VrfConsumer {
 
         fn predict(ref self: ContractState, params: PredictParams) {
             // check if call match with commit
-            let seed = self.vrf_consumer.assert_call_match_commit('predict', @params);
-            // retrieve random & clear commit
-            let random = self.vrf_consumer.assert_fulfilled_and_consume(seed);
-
+            let (_seed, random) = self.vrf_consumer.consume_random('predict', @params);
+        
             let random: u256 = random.into();
             let value: u32 = (random % 10).try_into().unwrap();
 
