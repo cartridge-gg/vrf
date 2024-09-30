@@ -32,7 +32,7 @@ trait IVrfProvider<TContractState> {
         self: @TContractState, consumer: ContractAddress, caller: ContractAddress
     ) -> felt252;
 
-    fn get_status(self: @TContractState, seed: felt252) -> RequestStatus;
+    fn is_fulfilled(self: @TContractState, seed: felt252) -> bool;
 
     fn get_public_key(self: @TContractState) -> PublicKey;
     fn set_public_key(ref self: TContractState, new_pubkey: PublicKey);
@@ -110,8 +110,6 @@ pub mod VrfProviderComponent {
         VrfProvider_nonces: Map<(ContractAddress, ContractAddress), felt252>,
         // (contract_address, caller_address) -> salt
         VrfProvider_commit: Map<(ContractAddress, ContractAddress), felt252>,
-        // seed -> status
-        VrfProvider_request_status: Map<felt252, RequestStatus>,
         // seed -> random
         VrfProvider_request_random: Map<felt252, felt252>,
     }
@@ -194,14 +192,11 @@ pub mod VrfProviderComponent {
             let request = Request { consumer, caller, entrypoint, calldata, nonce };
 
             let seed = request.hash();
+
             self.commit(consumer, caller, seed);
 
             // println!("request_random: {:?}", request);
             // println!("seed: {:?}", seed);
-
-            if self.get_status(seed) == RequestStatus::None {
-                self.VrfProvider_request_status.write(seed, RequestStatus::Received);
-            }
 
             self
                 .emit(
@@ -221,8 +216,7 @@ pub mod VrfProviderComponent {
         // called by executors
         fn submit_random(ref self: ComponentState<TContractState>, seed: felt252, proof: Proof) {
             // check status
-            let curr_status = self.VrfProvider_request_status.read(seed);
-            assert(curr_status != RequestStatus::Fulfilled, Errors::ALREADY_FULFILLED);
+            assert(!self.is_fulfilled(seed),Errors::ALREADY_FULFILLED);
 
             // verify proof
             let pubkey: Point = self.get_public_key().into();
@@ -232,8 +226,6 @@ pub mod VrfProviderComponent {
 
             // write random
             self.VrfProvider_request_random.write(seed, random);
-            // update request status
-            self.VrfProvider_request_status.write(seed, RequestStatus::Fulfilled);
 
             self.emit(SubmitRandom { seed, proof });
         }
@@ -243,8 +235,7 @@ pub mod VrfProviderComponent {
             ref self: ComponentState<TContractState>, caller: ContractAddress, seed: felt252
         ) -> felt252 {
             // check if request is fulfilled
-            let status = self.get_status(seed);
-            assert(status == RequestStatus::Fulfilled, Errors::REQUEST_NOT_FULFILLED);
+            assert(self.is_fulfilled(seed), Errors::REQUEST_NOT_FULFILLED);
 
             let consumer = get_caller_address();
 
@@ -285,8 +276,8 @@ pub mod VrfProviderComponent {
             self.VrfProvider_commit.read((consumer, caller))
         }
 
-        fn get_status(self: @ComponentState<TContractState>, seed: felt252) -> RequestStatus {
-            self.VrfProvider_request_status.read(seed)
+        fn is_fulfilled(self: @ComponentState<TContractState>, seed: felt252) -> bool {
+            self.get_random(seed) != 0
         }
 
         fn get_random(self: @ComponentState<TContractState>, seed: felt252) -> felt252 {
