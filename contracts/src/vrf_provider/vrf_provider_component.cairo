@@ -121,7 +121,9 @@ pub mod VrfProviderComponent {
 
     #[derive(Drop, starknet::Event)]
     struct RequestRandom {
+        #[key]
         consumer: ContractAddress,
+        #[key]
         caller: ContractAddress,
         entrypoint: felt252,
         calldata: Array<felt252>,
@@ -131,6 +133,7 @@ pub mod VrfProviderComponent {
 
     #[derive(Drop, starknet::Event)]
     struct SubmitRandom {
+        #[key]
         seed: felt252,
         proof: Proof,
     }
@@ -233,7 +236,7 @@ pub mod VrfProviderComponent {
             self.emit(SubmitRandom { seed, proof });
         }
 
-        // called by consumer contract to retrieve current seed for for a contract / entrypoint / calldata
+        // called by consumer contract to retrieve current seed for for a consumer / entrypoint / calldata / caller 
         fn get_seed_for_call(
             self: @ComponentState<TContractState>,
             caller: ContractAddress,
@@ -265,6 +268,7 @@ pub mod VrfProviderComponent {
             self.VrfProvider_request_status.read(seed)
         }
 
+        // note: caller contract can consume for any caller
         fn consume_random(
             ref self: ComponentState<TContractState>, caller: ContractAddress, seed: felt252
         ) -> felt252 {
