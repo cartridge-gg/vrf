@@ -25,7 +25,7 @@ mod VrfConsumer {
 
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
-    use vrf_contracts::vrf_consumer::vrf_consumer_component::{VrfConsumerComponent, RequestStatus};
+    use vrf_contracts::vrf_consumer::vrf_consumer_component::{VrfConsumerComponent};
 
     use super::PredictParams;
 

@@ -62,13 +62,7 @@ impl RequestImpl of RequestTrait {
     }
 }
 
-#[derive(Drop, Copy, Clone, Serde, PartialEq, starknet::Store)]
-pub enum RequestStatus {
-    #[default]
-    None,
-    Received,
-    Fulfilled,
-}
+
 
 
 #[derive(Drop, Copy, Clone, Serde, starknet::Store)]
@@ -99,7 +93,7 @@ pub mod VrfProviderComponent {
         OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl
     };
 
-    use super::{Request, RequestImpl, RequestTrait, RequestStatus, PublicKey};
+    use super::{Request, RequestImpl, RequestTrait, PublicKey};
 
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 

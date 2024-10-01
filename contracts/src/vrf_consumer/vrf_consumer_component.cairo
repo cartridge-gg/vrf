@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
-use vrf_contracts::vrf_provider::vrf_provider_component::{PublicKey, RequestStatus};
+use vrf_contracts::vrf_provider::vrf_provider_component::PublicKey;
 
 #[starknet::interface]
 trait IVrfConsumer<TContractState> {
@@ -19,7 +19,7 @@ pub mod VrfConsumerComponent {
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
     use vrf_contracts::vrf_provider::vrf_provider_component::{
-        IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, RequestStatus,
+        IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey,
         PublicKeyIntoPoint
     };
 
