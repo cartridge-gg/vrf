@@ -46,9 +46,7 @@ pub mod VrfConsumerComponent {
 
     #[embeddable_as(VrfConsumerImpl)]
     impl VrfConsumer<
-        TContractState,
-        +Drop<TContractState>,
-        +HasComponent<TContractState>,
+        TContractState, +Drop<TContractState>, +HasComponent<TContractState>,
     > of super::IVrfConsumer<ComponentState<TContractState>> {
         fn get_vrf_provider(self: @ComponentState<TContractState>) -> ContractAddress {
             self.VrfConsumer_vrf_provider.read()
@@ -58,7 +56,6 @@ pub mod VrfConsumerComponent {
             IVrfProviderDispatcher { contract_address: self.VrfConsumer_vrf_provider.read() }
                 .get_public_key()
         }
-
     }
 
     #[generate_trait]
@@ -90,6 +87,16 @@ pub mod VrfConsumerComponent {
         fn consume_random<T, +Drop<T>, +Serde<T>>(
             self: @ComponentState<TContractState>, entrypoint: felt252, calldata: @T
         ) -> (felt252, felt252) {
+            let caller = get_caller_address();
+            self.consume_random_for_caller(entrypoint, calldata, caller)
+        }
+
+        fn consume_random_for_caller<T, +Drop<T>, +Serde<T>>(
+            self: @ComponentState<TContractState>,
+            entrypoint: felt252,
+            calldata: @T,
+            caller: ContractAddress
+        ) -> (felt252, felt252) {
             let mut serialized = array![];
             calldata.serialize(ref serialized);
 
@@ -101,8 +108,6 @@ pub mod VrfConsumerComponent {
 
             // check call matches commit
             assert(seed == committed, Errors::COMMIT_MISMATCH);
-
-            let caller = get_caller_address();
 
             // consume random & uncommit caller
             let random = self.vrf_provider_disp().consume_random(caller, seed);
