@@ -8,7 +8,8 @@ trait IVrfProvider<TContractState> {
         consumer: ContractAddress,
         entrypoint: felt252,
         calldata: Array<felt252>,
-        nonce: felt252
+        nonce: felt252,
+        as_zero: bool,
     ) -> felt252;
 
     fn submit_random(ref self: TContractState, seed: felt252, proof: Proof);
@@ -146,6 +147,7 @@ pub mod VrfProviderComponent {
         pub const ALREADY_COMMITTED: felt252 = 'VrfProvider: already committed';
         pub const ALREADY_FULFILLED: felt252 = 'VrfProvider: already fulfilled';
         pub const REQUEST_NOT_FULFILLED: felt252 = 'VrfConsumer: not fulfilled';
+        pub const INVALID_PROOF: felt252 = 'VrfConsumer: invalid proof';
     }
 
     #[embeddable_as(VrfProviderImpl)]
@@ -170,8 +172,13 @@ pub mod VrfProviderComponent {
             entrypoint: felt252,
             calldata: Array<felt252>,
             nonce: felt252, // allow off-chain computation, must be valid
+            as_zero: bool, // request as zero address
         ) -> felt252 {
-            let caller = get_caller_address();
+            let caller = if as_zero {
+                starknet::contract_address_const::<0>()
+            } else {
+                get_caller_address()
+            };
 
             // revert if user already requesting
             let is_committed = self.is_committed(consumer, caller);
@@ -216,7 +223,7 @@ pub mod VrfProviderComponent {
             let pubkey: Point = self.get_public_key().into();
             let ecvrf = ECVRFImpl::new(pubkey);
 
-            let random = ecvrf.verify(proof.clone(), array![seed.clone()].span()).unwrap();
+            let random = ecvrf.verify(proof.clone(), array![seed.clone()].span()).expect(Errors::INVALID_PROOF);
 
             // write random
             self.VrfProvider_request_random.write(seed, random);

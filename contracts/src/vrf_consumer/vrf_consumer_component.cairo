@@ -71,15 +71,13 @@ pub mod VrfConsumerComponent {
         }
 
         fn get_seed_for_call(
-            self: @ComponentState<TContractState>, entrypoint: felt252, calldata: Array<felt252>
+            self: @ComponentState<TContractState>,caller: ContractAddress, entrypoint: felt252, calldata: Array<felt252>
         ) -> felt252 {
-            let caller = get_caller_address();
             self.vrf_provider_disp().get_seed_for_call(caller, entrypoint, calldata)
         }
 
-        fn get_commit(self: @ComponentState<TContractState>,) -> felt252 {
+        fn get_commit(self: @ComponentState<TContractState>, caller: ContractAddress) -> felt252 {
             let consumer = get_contract_address();
-            let caller = get_caller_address();
 
             self.vrf_provider_disp().get_commit(consumer, caller)
         }
@@ -88,10 +86,10 @@ pub mod VrfConsumerComponent {
             self: @ComponentState<TContractState>, entrypoint: felt252, calldata: @T
         ) -> (felt252, felt252) {
             let caller = get_caller_address();
-            self.consume_random_for_caller(entrypoint, calldata, caller)
+            self.consume_random_as_caller(entrypoint, calldata, caller)
         }
 
-        fn consume_random_for_caller<T, +Drop<T>, +Serde<T>>(
+        fn consume_random_as_caller<T, +Drop<T>, +Serde<T>>(
             self: @ComponentState<TContractState>,
             entrypoint: felt252,
             calldata: @T,
@@ -101,10 +99,14 @@ pub mod VrfConsumerComponent {
             calldata.serialize(ref serialized);
 
             // get seed for call
-            let seed = self.get_seed_for_call(entrypoint, serialized);
+            let seed = self.get_seed_for_call(caller, entrypoint, serialized);
 
             // get committed seed
-            let committed = self.get_commit();
+            let committed = self.get_commit(caller);
+
+            // println!("caller: {:?}", caller);
+            // println!("committed: {}", committed);
+            // println!("seed: {}", seed);
 
             // check call matches commit
             assert(seed == committed, Errors::COMMIT_MISMATCH);

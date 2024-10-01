@@ -9,6 +9,8 @@ pub struct PredictParams {
 #[starknet::interface]
 trait IVrfConsumerExample<TContractState> {
     fn predict(ref self: TContractState, params: PredictParams);
+    fn predict_as_zero(ref self: TContractState, params: PredictParams);
+ 
     fn get_score(self: @TContractState, player: starknet::ContractAddress) -> u32;
 
     fn set_vrf_provider(ref self: TContractState, new_vrf_provider: starknet::ContractAddress);
@@ -84,6 +86,20 @@ mod VrfConsumer {
         fn predict(ref self: ContractState, params: PredictParams) {
             // check if call match with commit
             let (_seed, random) = self.vrf_consumer.consume_random('predict', @params);
+        
+            let random: u256 = random.into();
+            let value: u32 = (random % 10).try_into().unwrap();
+
+            if params.value == value {
+                let caller = get_caller_address();
+                let score = self.scores.read(caller);
+                self.scores.write(caller, score + 1);
+            }
+        }
+
+        fn predict_as_zero(ref self: ContractState, params: PredictParams) {
+            // check if call match with commit
+            let (_seed, random) = self.vrf_consumer.consume_random_as_caller('predict_as_zero', @params, starknet::contract_address_const::<0>());
         
             let random: u256 = random.into();
             let value: u32 = (random % 10).try_into().unwrap();

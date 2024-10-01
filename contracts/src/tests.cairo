@@ -1,5 +1,5 @@
 use openzeppelin_testing as utils;
-use utils::constants::{OWNER, AUTHORIZED, CALLER};
+use utils::constants::{OWNER, AUTHORIZED, CALLER, OTHER, ZERO};
 use starknet::{ClassHash, ContractAddress, contract_address_const};
 
 use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
@@ -25,6 +25,7 @@ pub fn PROVIDER() -> ContractAddress {
 pub fn CONSUMER() -> ContractAddress {
     contract_address_const::<'CONSUMER'>()
 }
+
 
 #[derive(Drop, Copy, Clone)]
 pub struct SetupResult {
@@ -126,7 +127,7 @@ pub fn setup() -> SetupResult {
 fn test_setup() {
     let setup = setup();
 
-    // user request_random for predict(params)
+    // CALLER request_random for predict(params)
     start_cheat_caller_address(setup.provider.contract_address, CALLER());
 
     let consumer = setup.consumer.contract_address;
@@ -134,7 +135,7 @@ fn test_setup() {
     let calldata = array![7];
     let nonce = setup.provider.get_nonce(setup.consumer.contract_address, CALLER());
 
-    let seed = setup.provider.request_random(consumer, entrypoint, calldata, nonce);
+    let seed = setup.provider.request_random(consumer, entrypoint, calldata, nonce, false);
 
     println!("seed: {}", seed);
     stop_cheat_caller_address(setup.provider.contract_address);
@@ -147,7 +148,7 @@ fn test_setup() {
 
     stop_cheat_caller_address(setup.provider.contract_address);
 
-    // user consumer randomness
+    // CALLER consumer randomness
     start_cheat_caller_address(setup.consumer.contract_address, CALLER());
 
     let random = setup.provider.get_random(seed);
@@ -174,7 +175,7 @@ fn test_setup() {
 fn test_changed_prediction_calldata() {
     let setup = setup();
 
-    // user request_random for predict(params)
+    // CALLER request_random for predict(params)
     start_cheat_caller_address(setup.provider.contract_address, CALLER());
 
     let consumer = setup.consumer.contract_address;
@@ -182,7 +183,7 @@ fn test_changed_prediction_calldata() {
     let calldata = array![7];
     let nonce = setup.provider.get_nonce(setup.consumer.contract_address, CALLER());
 
-    let seed = setup.provider.request_random(consumer, entrypoint, calldata, nonce);
+    let seed = setup.provider.request_random(consumer, entrypoint, calldata, nonce, false);
     println!("seed: {}", seed);
 
     stop_cheat_caller_address(setup.provider.contract_address);
@@ -195,15 +196,8 @@ fn test_changed_prediction_calldata() {
 
     stop_cheat_caller_address(setup.provider.contract_address);
 
-    // user consumer randomness
+    // CALLER consumer randomness
     start_cheat_caller_address(setup.consumer.contract_address, CALLER());
-
-    let random = setup.provider.get_random(seed);
-    println!("get_random: {}", random);
-    assert(
-        random == 0x56eb1b9ad115ff980dc40bc05ce5ba2a94393a29a962498e49467af24220cdd,
-        'invalid random'
-    );
 
     // change guess from 7 -> 1
     setup.consumer.predict(PredictParams { value: 1 });
@@ -215,7 +209,7 @@ fn test_changed_prediction_calldata() {
 fn test_changed_prediction_entrypoint() {
     let setup = setup();
 
-    // user request_random for predict(params)
+    // CALLER request_random for predict(params)
     start_cheat_caller_address(setup.provider.contract_address, CALLER());
 
     let consumer = setup.consumer.contract_address;
@@ -223,7 +217,7 @@ fn test_changed_prediction_entrypoint() {
     let calldata = array![7];
     let nonce = setup.provider.get_nonce(setup.consumer.contract_address, CALLER());
 
-    let seed = setup.provider.request_random(consumer, entrypoint, calldata, nonce);
+    let seed = setup.provider.request_random(consumer, entrypoint, calldata, nonce, false);
     println!("seed: {}", seed);
     stop_cheat_caller_address(setup.provider.contract_address);
 
@@ -235,15 +229,111 @@ fn test_changed_prediction_entrypoint() {
 
     stop_cheat_caller_address(setup.provider.contract_address);
 
-    // user consumer randomness
+    // CALLER consumes randomness
     start_cheat_caller_address(setup.consumer.contract_address, CALLER());
 
-    let random = setup.provider.get_random(seed);
-    println!("get_random: {}", random);
-    assert(
-        random == 0x15edf1f71b575e3042d869bb4829566e4d7103bdc0b6862d7a658c22eb55497,
-        'invalid random'
-    );
-
     setup.consumer.predict(PredictParams { value: 7 });
+}
+
+//
+// predict_as_zero(7) 
+//
+
+// 709335980086892452643498776345904172040159484570831869629165509814881453129
+// 191784DCD6B85D4EADCE37FB24C24C47C8117FFCB5261C410CF9BF4E7AD8449
+
+// MUST give seed as hex string
+// curl -d '{"seed":["0x191784DCD6B85D4EADCE37FB24C24C47C8117FFCB5261C410CF9BF4E7AD8449"]}' -H
+// "Content-Type: application/json" http://localhost:3000/stark_vrf {
+//     "result": {
+//       "gamma_x": "0x513a735be1e86b8227486353849d7e01d314a20d9f472e43f4b39e96eb6b1e4",
+//       "gamma_y": "0x1fc1c7af76a6d5c4fa82730de7eff88b0ed557d0612031d741714f59ee0e523",
+//       "c": "0x229c3a63d5d0d91e01faf6484ad98decc9ca73b45f63904d715020d87588ec1",
+//       "s": "0x78b5db6d42c49d26e072a509c7235ca1aef23d28335b7f8cb4b9dd4c27c775a",
+//       "sqrt_ratio": "0xd4403b0a4489e4ac4a0a159ae4362083ae3412aee37c8d7cd67ede20c1eca0",
+//       "rnd": "0x24d0b6298519f40a7d8cbde38cbf3d1d51a96e1fea7dd5acac3d6059f21bf10"
+//     }
+//   }
+
+fn proof_predict_as_zero_7() -> Proof {
+    Proof {
+        gamma: Point {
+            x: 0x513a735be1e86b8227486353849d7e01d314a20d9f472e43f4b39e96eb6b1e4,
+            y: 0x1fc1c7af76a6d5c4fa82730de7eff88b0ed557d0612031d741714f59ee0e523
+        },
+        c: 0x229c3a63d5d0d91e01faf6484ad98decc9ca73b45f63904d715020d87588ec1,
+        s: 0x78b5db6d42c49d26e072a509c7235ca1aef23d28335b7f8cb4b9dd4c27c775a,
+        sqrt_ratio_hint: 0xd4403b0a4489e4ac4a0a159ae4362083ae3412aee37c8d7cd67ede20c1eca0,
+    }
+}
+
+
+#[test]
+fn test_request_random_as_zero_consumed_by_other() {
+    let setup = setup();
+
+    // CALLER request_random for predict_as_zero(params)
+    start_cheat_caller_address(setup.provider.contract_address, CALLER());
+
+    let consumer = setup.consumer.contract_address;
+    let entrypoint = 'predict_as_zero';
+    let calldata = array![7];
+    let nonce = setup.provider.get_nonce(setup.consumer.contract_address, ZERO());
+
+    let seed = setup.provider.request_random(consumer, entrypoint, calldata, nonce, true);
+
+    println!("seed: {}", seed);
+    stop_cheat_caller_address(setup.provider.contract_address);
+
+    // vrf-server provides proof for seed
+    start_cheat_caller_address(setup.provider.contract_address, AUTHORIZED());
+
+    let proof = proof_predict_as_zero_7();
+    setup.provider.submit_random(seed, proof);
+
+    stop_cheat_caller_address(setup.provider.contract_address);
+
+    // OTHER consumes randomness
+    start_cheat_caller_address(setup.consumer.contract_address, OTHER());
+
+    setup.consumer.predict_as_zero(PredictParams { value: 7 });
+
+    let commit = setup.provider.get_commit(CONSUMER(), ZERO());
+    assert(commit == 0, 'commit should be 0');
+
+    stop_cheat_caller_address(setup.consumer.contract_address);
+
+    // OTHER request_random for predict_as_zero(params)
+    start_cheat_caller_address(setup.provider.contract_address, OTHER());
+    let nonce = setup.provider.get_nonce(setup.consumer.contract_address, ZERO());
+    let calldata = array![1];
+    let _ = setup.provider.request_random(consumer, entrypoint, calldata, nonce, true);
+    stop_cheat_caller_address(setup.provider.contract_address);
+
+}
+
+
+#[test]
+#[should_panic(expected: 'VrfProvider: already committed')]
+fn test_request_random_as_zero_cannot_request_random_twice() {
+    let setup = setup();
+
+    // CALLER request_random for predict_as_zero(params)
+    start_cheat_caller_address(setup.provider.contract_address, CALLER());
+
+    let consumer = setup.consumer.contract_address;
+    let entrypoint = 'predict_as_zero';
+    let calldata = array![7];
+    let nonce = setup.provider.get_nonce(setup.consumer.contract_address, ZERO());
+
+    let _ = setup.provider.request_random(consumer, entrypoint, calldata, nonce, true);
+
+    stop_cheat_caller_address(setup.provider.contract_address);
+
+    // OTHER request_random for predict_as_zero(params)
+    start_cheat_caller_address(setup.provider.contract_address, OTHER());
+
+    let calldata = array![1];
+    let nonce = setup.provider.get_nonce(setup.consumer.contract_address, ZERO());
+    let _ = setup.provider.request_random(consumer, entrypoint, calldata, nonce, true);
 }
