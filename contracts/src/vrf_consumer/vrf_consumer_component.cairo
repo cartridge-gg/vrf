@@ -20,7 +20,7 @@ pub mod VrfConsumerComponent {
 
     use vrf_contracts::vrf_provider::vrf_provider_component::{
         IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey,
-        PublicKeyIntoPoint
+        PublicKeyIntoPoint, IVrfConsumerCallback, IVrfConsumerCallbackHelpers
     };
 
     #[storage]
@@ -42,6 +42,33 @@ pub mod VrfConsumerComponent {
     pub mod Errors {
         pub const ADDRESS_ZERO: felt252 = 'VrfConsumer: address is zero';
         pub const COMMIT_MISMATCH: felt252 = 'VrfConsumer: commit mismatch';
+        pub const INVALID_CALLER: felt252 = 'VrfConsumer: invalid caller';
+    }
+
+    #[embeddable_as(VrfConsumerCallbackImpl)]
+    impl VrfConsumerCallback<
+        TContractState,
+        +Drop<TContractState>,
+        +HasComponent<TContractState>,
+        +IVrfConsumerCallbackHelpers<TContractState>
+    > of IVrfConsumerCallback<ComponentState<TContractState>> {
+        fn on_request_random(
+            ref self: ComponentState<TContractState>,
+            entrypoint: felt252,
+            calldata: Array<felt252>,
+            caller: ContractAddress,
+        ) -> felt252 {
+            // check caller is vrf_provider
+            self.assert_called_by_vrf_provider();
+
+            let contract = HasComponent::get_contract(@self);
+            let key = contract.get_key_for_call(entrypoint, calldata.clone(), caller,);
+
+            // check if allowed to request
+            contract.assert_can_request_random(entrypoint, calldata, caller, key);
+
+            key
+        }
     }
 
     #[embeddable_as(VrfConsumerImpl)]
@@ -60,61 +87,38 @@ pub mod VrfConsumerComponent {
 
     #[generate_trait]
     pub impl InternalImpl<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>, +IVrfConsumerCallbackHelpers<TContractState>
     > of InternalTrait<TContractState> {
         fn initializer(ref self: ComponentState<TContractState>, vrf_provider: ContractAddress) {
             self.set_vrf_provider(vrf_provider);
+        }
+
+        fn assert_called_by_vrf_provider(self: @ComponentState<TContractState>,) {
+            let caller = get_caller_address();
+            let vrf_provider = self.VrfConsumer_vrf_provider.read();
+            assert(caller == vrf_provider, Errors::INVALID_CALLER);
         }
 
         fn vrf_provider_disp(self: @ComponentState<TContractState>,) -> IVrfProviderDispatcher {
             IVrfProviderDispatcher { contract_address: self.VrfConsumer_vrf_provider.read() }
         }
 
-        fn get_seed_for_call(
-            self: @ComponentState<TContractState>,caller: ContractAddress, entrypoint: felt252, calldata: Array<felt252>
-        ) -> felt252 {
-            self.vrf_provider_disp().get_seed_for_call(caller, entrypoint, calldata)
-        }
-
-        fn get_commit(self: @ComponentState<TContractState>, caller: ContractAddress) -> felt252 {
+        fn get_commit(self: @ComponentState<TContractState>, key: felt252) -> felt252 {
             let consumer = get_contract_address();
-
-            self.vrf_provider_disp().get_commit(consumer, caller)
+            self.vrf_provider_disp().get_commit(consumer, key)
+        }
+        fn is_committed(self: @ComponentState<TContractState>, key: felt252) -> bool {
+            let consumer = get_contract_address();
+            self.vrf_provider_disp().is_committed(consumer, key)
         }
 
-        fn consume_random<T, +Drop<T>, +Serde<T>>(
-            self: @ComponentState<TContractState>, entrypoint: felt252, calldata: @T
-        ) -> (felt252, felt252) {
-            let caller = get_caller_address();
-            self.consume_random_as_caller(entrypoint, calldata, caller)
+        fn get_nonce(self: @ComponentState<TContractState>, key: felt252) -> felt252 {
+            let consumer = get_contract_address();
+            self.vrf_provider_disp().get_nonce(consumer, key)
         }
 
-        fn consume_random_as_caller<T, +Drop<T>, +Serde<T>>(
-            self: @ComponentState<TContractState>,
-            entrypoint: felt252,
-            calldata: @T,
-            caller: ContractAddress
-        ) -> (felt252, felt252) {
-            let mut serialized = array![];
-            calldata.serialize(ref serialized);
-
-            // get seed for call
-            let seed = self.get_seed_for_call(caller, entrypoint, serialized);
-
-            // get committed seed
-            let committed = self.get_commit(caller);
-
-            // println!("caller: {:?}", caller);
-            // println!("committed: {}", committed);
-            // println!("seed: {}", seed);
-
-            // check call matches commit
-            assert(seed == committed, Errors::COMMIT_MISMATCH);
-
-            // consume random & uncommit caller
-            let random = self.vrf_provider_disp().consume_random(caller, seed);
-
-            (seed, random)
+        fn consume_random(self: @ComponentState<TContractState>, key: felt252,) -> felt252 {
+            self.vrf_provider_disp().consume_random(key)
         }
 
         fn set_vrf_provider(
