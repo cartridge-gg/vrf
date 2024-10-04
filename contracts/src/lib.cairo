@@ -8,14 +8,16 @@ pub mod vrf_consumer {
     pub mod vrf_consumer_example;
 }
 
+pub mod utils;
 
 #[cfg(test)]
 pub mod tests {
     pub mod common;
-    pub mod test_consumer_example;
     pub mod test_dice_no_commit;
     pub mod test_dice_with_commit;
     pub mod test_shared_dice_no_commit;
     pub mod test_shared_dice_with_commit;
+    pub mod test_predict;
+    pub mod test_action;
 }
 

@@ -39,13 +39,13 @@ trait IVrfConsumerCallback<TContractState> {
 
 #[starknet::interface]
 trait IVrfConsumerCallbackHelpers<TContractState> {
-    // helper to check if a request_random call should included in a multicall
-    fn should_request_random(
+    // generate a key for a call
+    fn get_key_for_call(
         self: @TContractState,
         entrypoint: felt252,
         calldata: Array<felt252>,
         caller: ContractAddress,
-    ) -> bool;
+    ) -> felt252;
 
     fn assert_can_request_random(
         self: @TContractState,
@@ -55,13 +55,13 @@ trait IVrfConsumerCallbackHelpers<TContractState> {
         key: felt252,
     );
 
-    // generate a key for a call
-    fn get_key_for_call(
+    // helper to check if a request_random call should included in a multicall
+    fn should_request_random(
         self: @TContractState,
         entrypoint: felt252,
         calldata: Array<felt252>,
         caller: ContractAddress,
-    ) -> felt252;
+    ) -> bool;
 }
 
 //
@@ -72,25 +72,6 @@ fn get_seed_from_key(consumer: ContractAddress, key: felt252, nonce: felt252) ->
     core::poseidon::poseidon_hash_span(array![key, consumer.into(), nonce].span())
 }
 
-
-#[derive(Debug, Drop, Clone, Serde)]
-pub struct Request {
-    consumer: ContractAddress,
-    caller: ContractAddress,
-    entrypoint: felt252,
-    calldata: Array<felt252>,
-    nonce: felt252,
-}
-
-#[generate_trait]
-impl RequestImpl of RequestTrait {
-    fn hash(self: @Request) -> felt252 {
-        let mut keys: Array<felt252> = array![];
-        self.serialize(ref keys);
-
-        core::poseidon::poseidon_hash_span(keys.span())
-    }
-}
 
 
 #[derive(Drop, Copy, Clone, Serde, starknet::Store)]
@@ -121,7 +102,7 @@ pub mod VrfProviderComponent {
         OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl
     };
 
-    use super::{Request, RequestImpl, RequestTrait, PublicKey, get_seed_from_key};
+    use super::{ PublicKey, get_seed_from_key};
     use super::{
         IVrfConsumerCallback, IVrfConsumerCallbackDispatcher, IVrfConsumerCallbackDispatcherTrait
     };
@@ -133,10 +114,10 @@ pub mod VrfProviderComponent {
         VrfProvider_pubkey: PublicKey,
         // (consumer, key) -> nonce
         VrfProvider_nonces: Map<(ContractAddress, felt252), felt252>,
-        // seed -> random
-        VrfProvider_random: Map<felt252, felt252>,
         // (consumer, key) -> seed
         VrfProvider_commit: Map<(ContractAddress, felt252), felt252>,
+        // seed -> random
+        VrfProvider_random: Map<felt252, felt252>,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -173,9 +154,8 @@ pub mod VrfProviderComponent {
 
     pub mod Errors {
         pub const PUBKEY_ZERO: felt252 = 'VrfProvider: pubkey is zero';
-        pub const ALREADY_COMMITTED: felt252 = 'VrfProvider: already committed';
         pub const ALREADY_FULFILLED: felt252 = 'VrfProvider: already fulfilled';
-        pub const REQUEST_NOT_FULFILLED: felt252 = 'VrfConsumer: not fulfilled';
+        pub const NOT_FULFILLED: felt252 = 'VrfConsumer: not fulfilled';
         pub const INVALID_PROOF: felt252 = 'VrfConsumer: invalid proof';
     }
 
@@ -198,7 +178,6 @@ pub mod VrfProviderComponent {
             let key = IVrfConsumerCallbackDispatcher { contract_address: consumer }
                 .on_request_random(entrypoint, calldata.clone(), caller);
 
-        
             let nonce = self._increase_nonce(consumer, key);
             let seed = get_seed_from_key(consumer, key, nonce);
 
@@ -251,7 +230,7 @@ pub mod VrfProviderComponent {
             // println!("seed: {}", seed);
 
             // check if request is fulfilled
-            assert(self.is_fulfilled(seed), Errors::REQUEST_NOT_FULFILLED);
+            assert(self.is_fulfilled(seed), Errors::NOT_FULFILLED);
 
             // clear caller commit for a consumer
             self._clear_commit(consumer, key);
@@ -295,11 +274,9 @@ pub mod VrfProviderComponent {
         }
 
         fn clear_commit(ref self: ComponentState<TContractState>, key: felt252) {
-            let consumer = get_caller_address();
             // clear caller commit for a consumer
+            let consumer = get_caller_address();
             self._clear_commit(consumer, key);
-            // // ??
-
         }
 
         //

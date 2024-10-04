@@ -15,7 +15,7 @@ use vrf_contracts::vrf_provider::vrf_provider_component::{
 
 use vrf_contracts::vrf_consumer::vrf_consumer_example::{
     VrfConsumer, IVrfConsumerExample, IVrfConsumerExampleDispatcher,
-    IVrfConsumerExampleDispatcherTrait, PredictParams
+    IVrfConsumerExampleDispatcherTrait
 };
 
 use super::common::{setup, SetupResult, CONSUMER, submit_random_no_proof, proof_predict_7};

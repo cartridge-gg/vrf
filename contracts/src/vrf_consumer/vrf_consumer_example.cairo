@@ -2,15 +2,21 @@
 // Compatible with OpenZeppelin Contracts for Cairo ^0.16.0
 
 #[derive(Drop, Copy, Clone, Serde)]
-pub struct PredictParams {
-    value: u32,
+pub enum Action {
+    Pay,
+    Run,
+    Fight
+}
+
+#[derive(Drop, Copy, Clone, Serde)]
+pub struct ActionParams {
+    pub param0: bool,
+    pub param1: u32,
+    pub param2: u256,
 }
 
 #[starknet::interface]
 trait IVrfConsumerExample<TContractState> {
-    // // one draw by lottery_id
-    // fn lottery(ref self: TContractState, lottery_id: felt252);
-
     // throw dice as much as you want and consume when you want
     fn dice_no_commit(ref self: TContractState);
 
@@ -23,30 +29,16 @@ trait IVrfConsumerExample<TContractState> {
     // any caller can throw dice then any caller must consume to throw again
     fn shared_dice_with_commit(ref self: TContractState);
 
-    fn predict(ref self: TContractState, params: PredictParams);
-    fn predict_as_zero(ref self: TContractState, params: PredictParams);
+    // commit on a number prediction
+    fn predict(ref self: TContractState, value: u32);
 
+    // commit on an action with multiple params
+    fn action(
+        ref self: TContractState, action: Action, params: ActionParams, extra: Array<felt252>
+    );
+
+    // admin
     fn set_vrf_provider(ref self: TContractState, new_vrf_provider: starknet::ContractAddress);
-}
-
-// pub mod Hashoor {
-//     pub fn hash<T, +Drop<T>, +Serde<T>>(mut span: Span<T>) -> felt252 {
-//         let mut arr = super::Calldata::serialize(span);
-//         core::poseidon::poseidon_hash_span(arr.span())
-//     }
-// }
-
-pub mod Calldata {
-    pub fn serialize<T, +Drop<T>, +Serde<T>>(mut span: Span<T>) -> Array<felt252> {
-        let mut arr = array![];
-
-        while let Option::Some(v) = span.pop_front() {
-            v.serialize(ref arr);
-        };
-
-        println!("serialize: {:?}", arr);
-        arr
-    }
 }
 
 
@@ -65,8 +57,8 @@ mod VrfConsumer {
         IVrfConsumerCallback, IVrfConsumerCallbackHelpers, get_seed_from_key
     };
 
-    use super::PredictParams;
-
+    use vrf_contracts::utils::{Hashoor, Calldata};
+    use super::{Action, ActionParams};
 
     component!(path: VrfConsumerComponent, storage: vrf_consumer, event: VrfConsumerEvent);
 
@@ -102,7 +94,7 @@ mod VrfConsumer {
         pub const shared_dice_no_commit: felt252 = 'shared_dice_no_commit';
         pub const shared_dice_with_commit: felt252 = 'shared_dice_with_commit';
         pub const predict: felt252 = 'predict';
-        pub const predict_as_zero: felt252 = 'predict_as_zero';
+        pub const action: felt252 = 'action';
     }
 
 
@@ -110,113 +102,71 @@ mod VrfConsumer {
     impl ConsumerImpl of super::IVrfConsumerExample<ContractState> {
         // throw dice as much as you want and consume when you want
         fn dice_no_commit(ref self: ContractState) {
-            // retrieve key, nonce & seed for call
+            // retrieve key
             let caller = get_caller_address();
             let key = self.get_key_for_call(Entrypoints::dice_no_commit, array![], caller);
 
-            let random = self.vrf_consumer.consume_random(key);
-
-            let random: u256 = random.into();
-            let _value: u32 = (random % 6).try_into().unwrap() + 1;
+            let _random = self.vrf_consumer.consume_random(key);
         }
 
         // throw dice then must consume to throw again
         fn dice_with_commit(ref self: ContractState) {
-            // retrieve key, nonce & seed for call
+            // retrieve key
             let caller = get_caller_address();
-            let consumer = get_contract_address();
             let key = self.get_key_for_call(Entrypoints::dice_with_commit, array![], caller);
-            let nonce = self.vrf_consumer.get_nonce(key);
-            let seed = get_seed_from_key(consumer, key, nonce);
 
             // check if can consume_random
-            let committed = self.vrf_consumer.get_commit(key);
-            assert(committed == seed, 'commit mismatch');
-
-            let random = self.vrf_consumer.consume_random(key);
-
-            let random: u256 = random.into();
-            let _value: u32 = (random % 6).try_into().unwrap() + 1;
+            self.vrf_consumer.assert_matching_commit(key);
+            let _random = self.vrf_consumer.consume_random(key);
         }
 
         // any caller can throw dice as much as he want and any caller can consume
         fn shared_dice_no_commit(ref self: ContractState) {
-            // retrieve key, nonce & seed for call
+            // retrieve key
             let caller = get_caller_address();
             let key = self.get_key_for_call(Entrypoints::shared_dice_no_commit, array![], caller);
 
-            let random = self.vrf_consumer.consume_random(key);
-
-            let random: u256 = random.into();
-            let _value: u32 = (random % 6).try_into().unwrap() + 1;
+            let _random = self.vrf_consumer.consume_random(key);
         }
 
 
         // any caller can throw dice then any caller must consume to throw again
         fn shared_dice_with_commit(ref self: ContractState) {
-            // retrieve key, nonce & seed for call
+            // retrieve key
             let caller = get_caller_address();
-            let consumer = get_contract_address();
             let key = self.get_key_for_call(Entrypoints::shared_dice_with_commit, array![], caller);
-            let nonce = self.vrf_consumer.get_nonce(key);
-            let seed = get_seed_from_key(consumer, key, nonce);
 
             // check if can consume_random
-            let committed = self.vrf_consumer.get_commit(key);
-            assert(committed == seed, 'commit mismatch');
-
-            let random = self.vrf_consumer.consume_random(key);
-
-            let random: u256 = random.into();
-            let _value: u32 = (random % 6).try_into().unwrap() + 1;
+            self.vrf_consumer.assert_matching_commit(key);
+            let _random = self.vrf_consumer.consume_random(key);
         }
 
 
-        fn predict(ref self: ContractState, params: PredictParams) {
-            // retrieve key, nonce & seed for call
+        fn predict(ref self: ContractState, value: u32) {
+            // retrieve key
             let caller = get_caller_address();
-            let consumer = get_contract_address();
-            let calldata = super::Calldata::serialize(array![params].span());
+            let calldata = Calldata::serialize1(value);
             let key = self.get_key_for_call(Entrypoints::predict, calldata, caller);
-            let nonce = self.vrf_consumer.get_nonce(key);
-            let seed = get_seed_from_key(consumer, key, nonce);
 
             // check if can consume_random
-            let committed = self.vrf_consumer.get_commit(key);
-            assert(committed == seed, 'commit mismatch');
-
-            let random = self.vrf_consumer.consume_random(key);
-
-            let random: u256 = random.into();
-            let value: u32 = (random % 10).try_into().unwrap();
-
-            if params.value == value {
-                let _caller = get_caller_address();
-            }
+            self.vrf_consumer.assert_matching_commit(key);
+            let _random = self.vrf_consumer.consume_random(key);
         }
 
-        fn predict_as_zero(ref self: ContractState, params: PredictParams) {
-            // retrieve key, nonce & seed for call
+        // commit on an action with multiple params
+        fn action(
+            ref self: ContractState, action: Action, params: ActionParams, extra: Array<felt252>
+        ) {
+            // retrieve key
             let caller = get_caller_address();
-            let consumer = get_contract_address();
-            let calldata = super::Calldata::serialize(array![params].span());
-            let key = self.get_key_for_call(Entrypoints::predict_as_zero, calldata, caller);
-            let nonce = self.vrf_consumer.get_nonce(key);
-            let seed = get_seed_from_key(consumer, key, nonce);
+            let calldata = Calldata::serialize3(action, params, extra);
+            let key = self.get_key_for_call(Entrypoints::action, calldata, caller);
 
             // check if can consume_random
-            let committed = self.vrf_consumer.get_commit(key);
-            assert(committed == seed, 'commit mismatch');
-
-            let random = self.vrf_consumer.consume_random(key);
-
-            let random: u256 = random.into();
-            let value: u32 = (random % 10).try_into().unwrap();
-
-            if params.value == value {
-                let _caller = get_caller_address();
-            }
+            self.vrf_consumer.assert_matching_commit(key);
+            let _random = self.vrf_consumer.consume_random(key);
         }
+
 
         fn set_vrf_provider(ref self: ContractState, new_vrf_provider: ContractAddress) {
             // should be restricted
@@ -227,32 +177,32 @@ mod VrfConsumer {
 
     #[abi(embed_v0)]
     impl VrfConsumerHelperImpl of IVrfConsumerCallbackHelpers<ContractState> {
-        fn should_request_random(
+        fn get_key_for_call(
             self: @ContractState,
             entrypoint: felt252,
             calldata: Array<felt252>,
             caller: ContractAddress,
-        ) -> bool {
+        ) -> felt252 {
             if entrypoint == Entrypoints::dice_no_commit {
-                return true;
+                return Hashoor::hash3(entrypoint, caller, calldata);
             };
             if entrypoint == Entrypoints::dice_with_commit {
-                return true;
+                return Hashoor::hash3(entrypoint, caller, calldata);
             };
             if entrypoint == Entrypoints::shared_dice_no_commit {
-                return true;
+                return Hashoor::hash3(entrypoint, 0, calldata);
             };
             if entrypoint == Entrypoints::shared_dice_with_commit {
-                return true;
+                return Hashoor::hash3(entrypoint, 0, calldata);
             };
             if entrypoint == Entrypoints::predict {
-                return true;
+                return Hashoor::hash3(entrypoint, caller, calldata);
             };
-            if entrypoint == Entrypoints::predict_as_zero {
-                return true;
+            if entrypoint == Entrypoints::action {
+                return Hashoor::hash3(entrypoint, caller, calldata);
             };
 
-            false
+            panic!("unhandled entrypoint")
         }
 
         fn assert_can_request_random(
@@ -266,73 +216,53 @@ mod VrfConsumer {
                 return;
             };
             if entrypoint == Entrypoints::dice_with_commit {
-                let is_committed = self.vrf_consumer.is_committed(key);
-                assert(!is_committed, 'already committed');
-                return;
+                return self.vrf_consumer.assert_not_committed(key);
             };
             if entrypoint == Entrypoints::shared_dice_no_commit {
                 return;
             };
             if entrypoint == Entrypoints::shared_dice_with_commit {
-                let is_committed = self.vrf_consumer.is_committed(key);
-                assert(!is_committed, 'already committed');
-                return;
+                return self.vrf_consumer.assert_not_committed(key);
             };
             if entrypoint == Entrypoints::predict {
-                let is_committed = self.vrf_consumer.is_committed(key);
-                assert(!is_committed, 'already committed');
-                return;
+                return self.vrf_consumer.assert_not_committed(key);
             };
-            if entrypoint == Entrypoints::predict_as_zero {
-                let is_committed = self.vrf_consumer.is_committed(key);
-                assert(!is_committed, 'already committed');
-                return;
+            if entrypoint == Entrypoints::action {
+                return self.vrf_consumer.assert_not_committed(key);
             };
         }
 
-        fn get_key_for_call(
+
+        fn should_request_random(
             self: @ContractState,
             entrypoint: felt252,
             calldata: Array<felt252>,
             caller: ContractAddress,
-        ) -> felt252 {
+        ) -> bool {
             if entrypoint == Entrypoints::dice_no_commit {
-                let mut keys: Array<felt252> = array![entrypoint, caller.into()];
-                calldata.serialize(ref keys);
-
-                return core::poseidon::poseidon_hash_span(keys.span());
+                return true;
             };
             if entrypoint == Entrypoints::dice_with_commit {
-                let mut keys: Array<felt252> = array![entrypoint, caller.into()];
-                calldata.serialize(ref keys);
-
-                return core::poseidon::poseidon_hash_span(keys.span());
+                let key = self.get_key_for_call(entrypoint, array![], caller);
+                return !self.vrf_consumer.is_committed(key);
             };
             if entrypoint == Entrypoints::shared_dice_no_commit {
-                let mut keys: Array<felt252> = array![entrypoint, 0];
-                calldata.serialize(ref keys);
-
-                return core::poseidon::poseidon_hash_span(keys.span());
+                return true;
             };
             if entrypoint == Entrypoints::shared_dice_with_commit {
-                let mut keys: Array<felt252> = array![entrypoint, 0];
-                calldata.serialize(ref keys);
-
-                return core::poseidon::poseidon_hash_span(keys.span());
+                let key = self.get_key_for_call(entrypoint, array![], caller);
+                return !self.vrf_consumer.is_committed(key);
             };
             if entrypoint == Entrypoints::predict {
-                let mut keys: Array<felt252> = array![entrypoint, caller.into()];
-                calldata.serialize(ref keys);
-
-                return core::poseidon::poseidon_hash_span(keys.span());
+                let key = self.get_key_for_call(entrypoint, calldata, caller);
+                return !self.vrf_consumer.is_committed(key);
             };
-            if entrypoint == Entrypoints::predict_as_zero {
-                let mut keys: Array<felt252> = array![entrypoint, 0];
-                calldata.serialize(ref keys);
-
-                return core::poseidon::poseidon_hash_span(keys.span());
+            if entrypoint == Entrypoints::action {
+                let key = self.get_key_for_call(entrypoint, calldata, caller);
+                return !self.vrf_consumer.is_committed(key);
             };
-            panic!("unhandled entrypoint")
+
+            false
         }
     }
 

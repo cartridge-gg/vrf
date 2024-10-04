@@ -20,7 +20,7 @@ pub mod VrfConsumerComponent {
 
     use vrf_contracts::vrf_provider::vrf_provider_component::{
         IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey,
-        PublicKeyIntoPoint, IVrfConsumerCallback, IVrfConsumerCallbackHelpers
+        PublicKeyIntoPoint, IVrfConsumerCallback, IVrfConsumerCallbackHelpers, get_seed_from_key
     };
 
     #[storage]
@@ -42,6 +42,7 @@ pub mod VrfConsumerComponent {
     pub mod Errors {
         pub const ADDRESS_ZERO: felt252 = 'VrfConsumer: address is zero';
         pub const COMMIT_MISMATCH: felt252 = 'VrfConsumer: commit mismatch';
+        pub const ALREADY_COMMITED: felt252 = 'VrfConsumer: already committed';
         pub const INVALID_CALLER: felt252 = 'VrfConsumer: invalid caller';
     }
 
@@ -61,6 +62,7 @@ pub mod VrfConsumerComponent {
             // check caller is vrf_provider
             self.assert_called_by_vrf_provider();
 
+            // retrieve key for call
             let contract = HasComponent::get_contract(@self);
             let key = contract.get_key_for_call(entrypoint, calldata.clone(), caller,);
 
@@ -107,18 +109,41 @@ pub mod VrfConsumerComponent {
             let consumer = get_contract_address();
             self.vrf_provider_disp().get_commit(consumer, key)
         }
+
         fn is_committed(self: @ComponentState<TContractState>, key: felt252) -> bool {
             let consumer = get_contract_address();
             self.vrf_provider_disp().is_committed(consumer, key)
         }
 
-        fn get_nonce(self: @ComponentState<TContractState>, key: felt252) -> felt252 {
+        fn assert_not_committed(self: @ComponentState<TContractState>, key: felt252) {
+            let is_committed = self.is_committed(key);
+            assert(!is_committed, Errors::ALREADY_COMMITED);
+        }
+
+        fn assert_matching_commit(self: @ComponentState<TContractState>, key: felt252) {
             let consumer = get_contract_address();
-            self.vrf_provider_disp().get_nonce(consumer, key)
+            let nonce = self.get_nonce(key);
+            let seed = get_seed_from_key(consumer, key, nonce);
+
+            let committed = self.get_commit(key);
+            assert(committed == seed, Errors::COMMIT_MISMATCH);
         }
 
         fn consume_random(self: @ComponentState<TContractState>, key: felt252,) -> felt252 {
             self.vrf_provider_disp().consume_random(key)
+        }
+
+        fn get_random(self: @ComponentState<TContractState>, key: felt252) -> felt252 {
+            let consumer = get_contract_address();
+            let nonce = self.get_nonce(key);
+            let seed = get_seed_from_key(consumer, key, nonce);
+
+            self.vrf_provider_disp().get_random(seed)
+        }
+
+        fn get_nonce(self: @ComponentState<TContractState>, key: felt252) -> felt252 {
+            let consumer = get_contract_address();
+            self.vrf_provider_disp().get_nonce(consumer, key)
         }
 
         fn set_vrf_provider(
