@@ -3,14 +3,12 @@ use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
 #[starknet::interface]
 trait IVrfProvider<TContractState> {
-    fn request_random(ref self: TContractState) -> felt252;
+    fn request_random(ref self: TContractState, salt: Option<felt252>) -> felt252;
     fn submit_random(ref self: TContractState, seed: felt252, proof: Proof);
     //
     fn submit_random_no_proof(ref self: TContractState, seed: felt252, random: felt252);
     //
-    fn get_next_seed(self: @TContractState, caller: ContractAddress,) -> felt252;
-    //
-    fn consume_random(ref self: TContractState, caller: ContractAddress) -> felt252;
+    fn consume_random(ref self: TContractState, salt: Option<felt252>) -> felt252;
     fn assert_consumed(ref self: TContractState, seed: felt252);
     //
     fn get_public_key(self: @TContractState) -> PublicKey;
@@ -20,11 +18,6 @@ trait IVrfProvider<TContractState> {
 //
 //
 //
-
-fn get_seed(caller: ContractAddress, nonce: felt252, chain_id: felt252) -> felt252 {
-    core::poseidon::poseidon_hash_span(array![nonce, caller.into(), chain_id].span())
-}
-
 
 #[derive(Drop, Copy, Clone, Serde, starknet::Store)]
 pub struct PublicKey {
@@ -46,6 +39,7 @@ impl PublicKeyIntoPoint of Into<PublicKey, Point> {
 pub mod VrfProviderComponent {
     use starknet::ContractAddress;
     use starknet::get_caller_address;
+    use core::poseidon::poseidon_hash_span;
     use starknet::storage::{
         StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map
     };
@@ -54,7 +48,7 @@ pub mod VrfProviderComponent {
         OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl
     };
 
-    use super::{PublicKey, get_seed};
+    use super::{PublicKey};
 
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
@@ -73,14 +67,9 @@ pub mod VrfProviderComponent {
     }
 
     #[derive(Drop, starknet::Event)]
-    struct RequestRandom {
+    struct SubmitRandom {
         #[key]
         caller: ContractAddress,
-        seed: felt252,
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct SubmitRandom {
         #[key]
         seed: felt252,
         proof: Proof,
@@ -90,7 +79,6 @@ pub mod VrfProviderComponent {
     #[event]
     enum Event {
         PublicKeyChanged: PublicKeyChanged,
-        RequestRandom: RequestRandom,
         SubmitRandom: SubmitRandom,
     }
 
@@ -110,19 +98,17 @@ pub mod VrfProviderComponent {
         impl Owner: OwnableComponent::HasComponent<TContractState>,
     > of super::IVrfProvider<ComponentState<TContractState>> {
         // directly called by user to request randomness
-        fn request_random(ref self: ComponentState<TContractState>) -> felt252 {
-            let caller = get_caller_address();
-            let nonce = self._increase_nonce(caller);
-            let chain_id = starknet::get_execution_info().tx_info.unbox().chain_id;
-            let seed = get_seed(caller, nonce, chain_id);
-
-            self.emit(RequestRandom { caller, seed, });
-
-            seed
-        }
+        fn request_random(
+            ref self: ComponentState<TContractState>, caller: ContractAddress, salt: Option<felt252>
+        ) {}
 
         // called by vrf providers
-        fn submit_random(ref self: ComponentState<TContractState>, seed: felt252, proof: Proof) {
+        fn submit_random(
+            ref self: ComponentState<TContractState>,
+            caller: ContractAddress,
+            seed: felt252,
+            proof: Proof
+        ) {
             // verify proof
             let pubkey: Point = self.get_public_key().into();
             let ecvrf = ECVRFImpl::new(pubkey);
@@ -131,12 +117,10 @@ pub mod VrfProviderComponent {
                 .verify(proof.clone(), array![seed.clone()].span())
                 .expect(Errors::INVALID_PROOF);
 
-            // write random
             self.VrfProvider_random.write(seed, random);
 
-            self.emit(SubmitRandom { seed, proof });
+            self.emit(SubmitRandom { caller, seed, proof });
         }
-
 
         // for testing purpose
         fn submit_random_no_proof(
@@ -155,24 +139,23 @@ pub mod VrfProviderComponent {
         //
         //
 
-        // get next seed for a caller address
-        fn get_next_seed(
-            self: @ComponentState<TContractState>, caller: ContractAddress,
-        ) -> felt252 {
-            let nonce = self._get_nonce(caller) + 1;
-            let chain_id = starknet::get_execution_info().tx_info.unbox().chain_id;
-            get_seed(caller, nonce, chain_id)
-        }
-
         // consume randomness
         fn consume_random(
-            ref self: ComponentState<TContractState>, caller: ContractAddress
+            ref self: ComponentState<TContractState>, salt: Option<felt252>
         ) -> felt252 {
-            let nonce = self._get_nonce(caller);
+            let caller = get_caller_address();
             let chain_id = starknet::get_execution_info().tx_info.unbox().chain_id;
-            let seed = get_seed(caller, nonce, chain_id);
-            let random = self.VrfProvider_random.read(seed);
 
+            let seed = match salt {
+                Option::Some(s) => poseidon_hash_span(array![s, caller.into(), chain_id].span()),
+                Option::None => {
+                    let nonce = self.VrfProvider_nonces.read(caller);
+                    poseidon_hash_span(array![nonce, caller.into(), chain_id].span())
+                    self.VrfProvider_nonces.write(caller, nonce + 1);
+                }
+            };
+
+            let random = self.VrfProvider_random.read(seed);
             assert(random != 0, Errors::NOT_FULFILLED);
 
             // enforce one time consumtion
@@ -186,7 +169,6 @@ pub mod VrfProviderComponent {
             let random = self.VrfProvider_random.read(seed);
             assert(random == 0, Errors::NOT_CONSUMED);
         }
-
 
         //
         //
@@ -217,23 +199,6 @@ pub mod VrfProviderComponent {
             self.VrfProvider_pubkey.write(new_pubkey);
 
             self.emit(PublicKeyChanged { pubkey: new_pubkey })
-        }
-
-        //
-        //
-        //
-
-        fn _get_nonce(self: @ComponentState<TContractState>, caller: ContractAddress,) -> felt252 {
-            self.VrfProvider_nonces.read(caller)
-        }
-
-        fn _increase_nonce(
-            ref self: ComponentState<TContractState>, caller: ContractAddress
-        ) -> felt252 {
-            let nonce = self.VrfProvider_nonces.read(caller);
-            let new_nonce = nonce + 1;
-            self.VrfProvider_nonces.write(caller, new_nonce);
-            new_nonce
         }
     }
 }
