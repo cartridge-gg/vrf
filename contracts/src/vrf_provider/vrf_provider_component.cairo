@@ -103,14 +103,21 @@ pub mod VrfProviderComponent {
             ref self: ComponentState<TContractState>, salt: Option<felt252>
         ) -> felt252 {
             let caller = get_caller_address();
-            let chain_id = starknet::get_execution_info().tx_info.unbox().chain_id;
+            let tx_info = starknet::get_execution_info().tx_info.unbox();
+
+            // Always return 0 during fee estimation to avoid leaking vrf info.
+            if tx_info.max_fee == 0 {
+                return 0;
+            }
 
             let seed = match salt {
-                Option::Some(s) => poseidon_hash_span(array![s, caller.into(), chain_id].span()),
+                Option::Some(s) => {
+                    poseidon_hash_span(array![s, caller.into(), tx_info.chain_id].span())
+                },
                 Option::None => {
                     let nonce = self.VrfProvider_nonces.read(caller);
                     self.VrfProvider_nonces.write(caller, nonce + 1);
-                    poseidon_hash_span(array![nonce, caller.into(), chain_id].span())
+                    poseidon_hash_span(array![nonce, caller.into(), tx_info.chain_id].span())
                 }
             };
 
