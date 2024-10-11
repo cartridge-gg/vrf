@@ -96,7 +96,7 @@ pub mod VrfProviderComponent {
 
             self.VrfProvider_random.write(seed, random);
 
-            self.emit(SubmitRandom { seed, proof });
+            self.emit(SubmitRandom { caller, seed, proof });
         }
 
         fn consume_random(
