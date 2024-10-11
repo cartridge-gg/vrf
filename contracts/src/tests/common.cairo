@@ -1,6 +1,6 @@
 use openzeppelin_testing as utils;
 use openzeppelin_utils::serde::SerializedAppend;
-use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
+use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address, cheat_max_fee_global };
 use starknet::{ContractAddress, contract_address_const};
 use stark_vrf::ecvrf::Proof;
 use utils::constants::{AUTHORIZED, OWNER};
@@ -25,6 +25,10 @@ pub fn CONSUMER1() -> ContractAddress {
 
 pub fn CONSUMER2() -> ContractAddress {
     contract_address_const::<'CONSUMER2'>()
+}
+
+pub fn PLAYER1() -> ContractAddress {
+    contract_address_const::<'PLAYER1'>()
 }
 
 #[derive(Drop, Copy, Clone)]
@@ -56,6 +60,8 @@ pub fn setup() -> SetupResult {
 
     utils::declare_and_deploy_at("VrfConsumer", CONSUMER1(), consumer_calldata.clone());
     utils::deploy_another_at(CONSUMER1(), CONSUMER2(), consumer_calldata);
+
+    cheat_max_fee_global(10000000000000000);
 
     SetupResult {
         provider: IVrfProviderDispatcher { contract_address: PROVIDER() },

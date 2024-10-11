@@ -9,6 +9,7 @@ mod consumer_template {
     use starknet::get_caller_address;
 
     use vrf_contracts::vrf_consumer::vrf_consumer_component::VrfConsumerComponent;
+    use vrf_contracts::vrf_provider::vrf_provider_component::Source;
 
     component!(path: VrfConsumerComponent, storage: vrf_consumer, event: VrfConsumerEvent);
 
@@ -39,7 +40,7 @@ mod consumer_template {
     impl VrfConsumerTemplateImpl of super::IVrfConsumerTemplate<ContractState> {
         fn dice(ref self: ContractState) {
             let player_id = get_caller_address();
-            let random: u256 = self.vrf_consumer.consume_random(player_id).into();
+            let random: u256 = self.vrf_consumer.consume_random(Source::Nonce(player_id)).into();
             let value: u8 = (random % 6).try_into().unwrap() + 1;
             // do the right things
         }
