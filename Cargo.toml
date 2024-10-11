@@ -4,17 +4,32 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = "0.7.3"
+axum = "0.7.7"
+http-body-util = "0.1.0"
+hyper = { version = "1", features = ["full"] }
+hyper-util = { version = "0.1.1", features = ["client", "client-legacy"] }
+tower = { version = "0.5.1", features = ["make", "util"] }
 serde = { version = "1.0.195", features = ["serde_derive"] }
-serde_repr = "0.1.18"
-tokio = { version = "1.35.1", features = ["full"] }
-tower-http = { version = "0.5.0", features = ["trace"] }
+# serde_repr = "0.1"
+tokio = { version = "1.40", features = ["full"] }
+tower-http = { version = "0.5.0", features = ["trace", "cors"] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 prost = "0.12.3"
 stark-vrf = { git = "https://github.com/dojoengine/stark-vrf.git" }
 num = "0.4.3"
+serde_json = "1.0"
 clap = { version = "4.5.17", features = ["derive"] }
+
+
+starknet = "0.12"
+katana-primitives = { git = "https://github.com/dojoengine/dojo.git", version="1.0.0-alpha.14"}
+katana-rpc-types = { git = "https://github.com/dojoengine/dojo.git", version="1.0.0-alpha.14"}
+cainome-cairo-serde = { git = "https://github.com/cartridge-gg/cainome", tag = "v0.4.3"}
+cainome-cairo-serde-derive = { git = "https://github.com/cartridge-gg/cainome", tag = "v0.4.3"}
+
 
 [build-dependencies]
 prost-build = "0.12.3"
+
+
