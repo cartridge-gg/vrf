@@ -110,11 +110,6 @@ pub mod VrfProviderComponent {
             let caller = get_caller_address();
             let tx_info = starknet::get_execution_info().tx_info.unbox();
 
-            // Always return 0 during fee estimation to avoid leaking vrf info.
-            if tx_info.max_fee == 0 {
-                return 0;
-            }
-
             let seed = match source {
                 Source::Nonce(addr) => {
                     let nonce = self.VrfProvider_nonces.read(addr);
@@ -125,6 +120,13 @@ pub mod VrfProviderComponent {
                     poseidon_hash_span(array![salt, caller.into(), tx_info.chain_id].span())
                 },
             };
+            
+            // Always return 0 during fee estimation to avoid leaking vrf info.
+            if tx_info.max_fee == 0 {
+                // simulate consumed
+                self.VrfProvider_random.write(seed, 0);
+                return 0;
+            }
 
             let random = self.VrfProvider_random.read(seed);
             assert(random != 0, Errors::NOT_FULFILLED);
