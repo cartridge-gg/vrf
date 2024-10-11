@@ -27,6 +27,10 @@ pub fn CONSUMER2() -> ContractAddress {
     contract_address_const::<'CONSUMER2'>()
 }
 
+pub fn PLAYER1() -> ContractAddress {
+    contract_address_const::<'PLAYER1'>()
+}
+
 #[derive(Drop, Copy, Clone)]
 pub struct SetupResult {
     provider: IVrfProviderDispatcher,

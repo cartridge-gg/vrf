@@ -4,6 +4,8 @@
 #[starknet::interface]
 trait IVrfConsumerExample<TContractState> {
     fn dice(ref self: TContractState) -> u8;
+    fn dice_with_salt(ref self: TContractState) -> u8;
+
     fn not_consuming(ref self: TContractState);
 
     // admin
@@ -22,6 +24,7 @@ mod VrfConsumer {
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
     use vrf_contracts::vrf_consumer::vrf_consumer_component::{VrfConsumerComponent};
+    use vrf_contracts::vrf_provider::vrf_provider_component::Source;
 
     component!(path: VrfConsumerComponent, storage: vrf_consumer, event: VrfConsumerEvent);
 
@@ -52,15 +55,21 @@ mod VrfConsumer {
     impl ConsumerImpl of super::IVrfConsumerExample<ContractState> {
         // throw dice
         fn dice(ref self: ContractState) -> u8 {
-            let caller = get_caller_address();
-            let random: u256 = self.vrf_consumer.consume_random(caller).into();
+            let player_id = get_caller_address();
+            let random: u256 = self.vrf_consumer.consume_random(Source::Nonce(player_id)).into();
+
+            ((random % 6) + 1).try_into().unwrap()
+        }
+
+        fn dice_with_salt(ref self: ContractState) -> u8 {
+            let random: u256 = self.vrf_consumer.consume_random(Source::Salt('salt')).into();
 
             ((random % 6) + 1).try_into().unwrap()
         }
 
         fn not_consuming(ref self: ContractState) {
             let _player_id = get_caller_address();
-        // do the nothing
+            // do the nothing
         }
 
         fn set_vrf_provider(ref self: ContractState, new_vrf_provider: ContractAddress) {
