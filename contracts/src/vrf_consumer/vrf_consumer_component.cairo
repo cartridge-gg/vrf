@@ -20,7 +20,7 @@ pub mod VrfConsumerComponent {
 
     use vrf_contracts::vrf_provider::vrf_provider_component::{
         IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey,
-        PublicKeyIntoPoint, get_seed
+        PublicKeyIntoPoint
     };
 
     #[storage]
@@ -70,7 +70,7 @@ pub mod VrfConsumerComponent {
         fn consume_random(
             self: @ComponentState<TContractState>, caller: ContractAddress
         ) -> felt252 {
-            self.vrf_provider_disp().consume_random(caller)
+            self.vrf_provider_disp().consume_random(Option::None)
         }
 
         fn vrf_provider_disp(self: @ComponentState<TContractState>,) -> IVrfProviderDispatcher {

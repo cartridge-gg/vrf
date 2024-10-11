@@ -22,7 +22,6 @@ mod VrfConsumer {
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
     use vrf_contracts::vrf_consumer::vrf_consumer_component::{VrfConsumerComponent};
-    use vrf_contracts::vrf_provider::vrf_provider_component::get_seed;
 
     component!(path: VrfConsumerComponent, storage: vrf_consumer, event: VrfConsumerEvent);
 
@@ -61,7 +60,7 @@ mod VrfConsumer {
 
         fn not_consuming(ref self: ContractState) {
             let _player_id = get_caller_address();
-            // do the nothing
+        // do the nothing
         }
 
         fn set_vrf_provider(ref self: ContractState, new_vrf_provider: ContractAddress) {

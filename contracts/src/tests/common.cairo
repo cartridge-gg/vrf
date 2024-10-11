@@ -1,12 +1,9 @@
 use openzeppelin_testing as utils;
-use utils::constants::{OWNER, AUTHORIZED, CALLER, OTHER, ZERO};
-use starknet::{ClassHash, ContractAddress, contract_address_const};
-
-use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
-
-use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
-
 use openzeppelin_utils::serde::SerializedAppend;
+use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
+use starknet::{ContractAddress, contract_address_const};
+use stark_vrf::ecvrf::Proof;
+use utils::constants::{AUTHORIZED, OWNER};
 
 use vrf_contracts::vrf_provider::vrf_provider::VrfProvider;
 use vrf_contracts::vrf_provider::vrf_provider_component::{
@@ -29,7 +26,6 @@ pub fn CONSUMER1() -> ContractAddress {
 pub fn CONSUMER2() -> ContractAddress {
     contract_address_const::<'CONSUMER2'>()
 }
-
 
 #[derive(Drop, Copy, Clone)]
 pub struct SetupResult {
@@ -68,9 +64,8 @@ pub fn setup() -> SetupResult {
     }
 }
 
-pub fn submit_random_no_proof(provider: IVrfProviderDispatcher, seed: felt252, rand: felt252) {
-    // vrf-server provides randomness
+pub fn submit_random(provider: IVrfProviderDispatcher, seed: felt252, proof: Proof) {
     start_cheat_caller_address(provider.contract_address, AUTHORIZED());
-    provider.submit_random_no_proof(seed, rand);
+    provider.submit_random(seed, proof);
     stop_cheat_caller_address(provider.contract_address);
 }

@@ -13,4 +13,3 @@ pub mod tests {
     pub mod common;
     pub mod test_dice;
 }
-

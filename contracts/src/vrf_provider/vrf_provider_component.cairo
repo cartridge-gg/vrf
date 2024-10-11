@@ -3,21 +3,14 @@ use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
 #[starknet::interface]
 trait IVrfProvider<TContractState> {
-    fn request_random(ref self: TContractState, salt: Option<felt252>) -> felt252;
+    fn request_random(self: @TContractState, caller: ContractAddress, salt: Option<felt252>);
     fn submit_random(ref self: TContractState, seed: felt252, proof: Proof);
-    //
-    fn submit_random_no_proof(ref self: TContractState, seed: felt252, random: felt252);
-    //
     fn consume_random(ref self: TContractState, salt: Option<felt252>) -> felt252;
     fn assert_consumed(ref self: TContractState, seed: felt252);
-    //
+
     fn get_public_key(self: @TContractState) -> PublicKey;
     fn set_public_key(ref self: TContractState, new_pubkey: PublicKey);
 }
-
-//
-//
-//
 
 #[derive(Drop, Copy, Clone, Serde, starknet::Store)]
 pub struct PublicKey {
@@ -31,24 +24,18 @@ impl PublicKeyIntoPoint of Into<PublicKey, Point> {
     }
 }
 
-//
-//
-//
-
 #[starknet::component]
 pub mod VrfProviderComponent {
     use starknet::ContractAddress;
     use starknet::get_caller_address;
     use core::poseidon::poseidon_hash_span;
-    use starknet::storage::{
-        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map
-    };
+    use starknet::storage::Map;
 
     use openzeppelin::access::ownable::{
         OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl
     };
 
-    use super::{PublicKey};
+    use super::PublicKey;
 
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
@@ -68,8 +55,6 @@ pub mod VrfProviderComponent {
 
     #[derive(Drop, starknet::Event)]
     struct SubmitRandom {
-        #[key]
-        caller: ContractAddress,
         #[key]
         seed: felt252,
         proof: Proof,
@@ -97,19 +82,11 @@ pub mod VrfProviderComponent {
         +HasComponent<TContractState>,
         impl Owner: OwnableComponent::HasComponent<TContractState>,
     > of super::IVrfProvider<ComponentState<TContractState>> {
-        // directly called by user to request randomness
         fn request_random(
-            ref self: ComponentState<TContractState>, caller: ContractAddress, salt: Option<felt252>
+            self: @ComponentState<TContractState>, caller: ContractAddress, salt: Option<felt252>
         ) {}
 
-        // called by vrf providers
-        fn submit_random(
-            ref self: ComponentState<TContractState>,
-            caller: ContractAddress,
-            seed: felt252,
-            proof: Proof
-        ) {
-            // verify proof
+        fn submit_random(ref self: ComponentState<TContractState>, seed: felt252, proof: Proof) {
             let pubkey: Point = self.get_public_key().into();
             let ecvrf = ECVRFImpl::new(pubkey);
 
@@ -119,27 +96,9 @@ pub mod VrfProviderComponent {
 
             self.VrfProvider_random.write(seed, random);
 
-            self.emit(SubmitRandom { caller, seed, proof });
+            self.emit(SubmitRandom { seed, proof });
         }
 
-        // for testing purpose
-        fn submit_random_no_proof(
-            ref self: ComponentState<TContractState>, seed: felt252, random: felt252
-        ) {
-            assert(
-                get_caller_address() == starknet::contract_address_const::<'AUTHORIZED'>(),
-                'not AUTHORIZED'
-            );
-            // write random
-            self.VrfProvider_random.write(seed, random);
-        }
-
-
-        //
-        //
-        //
-
-        // consume randomness
         fn consume_random(
             ref self: ComponentState<TContractState>, salt: Option<felt252>
         ) -> felt252 {
@@ -150,29 +109,23 @@ pub mod VrfProviderComponent {
                 Option::Some(s) => poseidon_hash_span(array![s, caller.into(), chain_id].span()),
                 Option::None => {
                     let nonce = self.VrfProvider_nonces.read(caller);
-                    poseidon_hash_span(array![nonce, caller.into(), chain_id].span())
                     self.VrfProvider_nonces.write(caller, nonce + 1);
+                    poseidon_hash_span(array![nonce, caller.into(), chain_id].span())
                 }
             };
 
             let random = self.VrfProvider_random.read(seed);
             assert(random != 0, Errors::NOT_FULFILLED);
 
-            // enforce one time consumtion
             self.VrfProvider_random.write(seed, 0);
 
             random
         }
 
-        // called by vrf providers
         fn assert_consumed(ref self: ComponentState<TContractState>, seed: felt252) {
             let random = self.VrfProvider_random.read(seed);
             assert(random == 0, Errors::NOT_CONSUMED);
         }
-
-        //
-        //
-        //
 
         fn get_public_key(self: @ComponentState<TContractState>) -> PublicKey {
             self.VrfProvider_pubkey.read()
