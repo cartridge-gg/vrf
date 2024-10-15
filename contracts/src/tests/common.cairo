@@ -1,16 +1,16 @@
 use openzeppelin_testing as utils;
 use openzeppelin_utils::serde::SerializedAppend;
-use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address, cheat_max_fee_global };
+use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address, cheat_max_fee_global};
 use starknet::{ContractAddress, contract_address_const};
 use stark_vrf::ecvrf::Proof;
 use utils::constants::{AUTHORIZED, OWNER};
 
-use vrf_contracts::vrf_provider::vrf_provider::VrfProvider;
-use vrf_contracts::vrf_provider::vrf_provider_component::{
+use cartridge_vrf::vrf_provider::vrf_provider::VrfProvider;
+use cartridge_vrf::vrf_provider::vrf_provider_component::{
     IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey,
 };
 
-use vrf_contracts::vrf_consumer::vrf_consumer_example::{
+use cartridge_vrf::vrf_consumer::vrf_consumer_example::{
     VrfConsumer, IVrfConsumerExample, IVrfConsumerExampleDispatcher,
     IVrfConsumerExampleDispatcherTrait
 };

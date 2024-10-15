@@ -8,12 +8,12 @@ use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
 use openzeppelin_utils::serde::SerializedAppend;
 
-use vrf_contracts::vrf_provider::vrf_provider::VrfProvider;
-use vrf_contracts::vrf_provider::vrf_provider_component::{
+use cartridge_vrf::vrf_provider::vrf_provider::VrfProvider;
+use cartridge_vrf::vrf_provider::vrf_provider_component::{
     IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source
 };
 
-use vrf_contracts::vrf_consumer::vrf_consumer_example::{
+use cartridge_vrf::vrf_consumer::vrf_consumer_example::{
     VrfConsumer, IVrfConsumerExample, IVrfConsumerExampleDispatcher,
     IVrfConsumerExampleDispatcherTrait
 };
@@ -22,7 +22,6 @@ use super::common::{setup, submit_random, SetupResult, CONSUMER1, CONSUMER2, PLA
 
 // private key: 420
 // {"public_key_x":"0x66da5d53168d591c55d4c05f3681663ac51bcdccd5ca09e366b71b0c40ccff4","public_key_y":"0x6d3eb29920bf55195e5ec76f69e247c0942c7ef85f6640896c058ec75ca2232"}
-
 
 const SEED: felt252 = 0x334b8c0ea68406b183b5affd81ce11bec1a0807d3fd68a54ee75ec148053b09;
 
@@ -60,11 +59,7 @@ fn test_dice() {
 
     setup.provider.request_random(CONSUMER1(), Source::Nonce(PLAYER1()));
 
-    submit_random(
-        setup.provider,
-        SEED,
-        proof(),
-    );
+    submit_random(setup.provider, SEED, proof(),);
 
     // PLAYER1 call dice, CONSUMER1 is caller of consume_random
     start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1());
@@ -83,11 +78,7 @@ fn test_not_consuming__must_consume() {
     // noop just here for example
     setup.provider.request_random(CONSUMER1(), Source::Nonce(PLAYER1()));
 
-    submit_random(
-        setup.provider,
-        SEED,
-        proof(),
-    );
+    submit_random(setup.provider, SEED, proof(),);
 
     // PLAYER1 dont consume
     start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1());
@@ -106,11 +97,7 @@ fn test_dice__cannot_consume_twice() {
     setup.provider.request_random(CONSUMER1(), Source::Nonce(PLAYER1()));
 
     // provider submit_random
-    submit_random(
-        setup.provider,
-        SEED,
-        proof(),
-    );
+    submit_random(setup.provider, SEED, proof(),);
 
     // PLAYER1 consume twice
     start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1());
@@ -125,13 +112,9 @@ fn test_dice_with_salt() {
     let setup = setup();
 
     // noop just here for example
-    setup.provider.request_random(CONSUMER1(),Source::Salt('salt'));
+    setup.provider.request_random(CONSUMER1(), Source::Salt('salt'));
 
-    submit_random(
-        setup.provider,
-        SEED_FROM_SALT,
-        proof_from_salt(),
-    );
+    submit_random(setup.provider, SEED_FROM_SALT, proof_from_salt(),);
 
     // PLAYER1 call dice_with_salt, CONSUMER1 is caller of consume_random
     start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1());
@@ -148,13 +131,9 @@ fn test_dice_with_salt__wrong_proof() {
     let setup = setup();
 
     // noop just here for example
-    setup.provider.request_random(CONSUMER1(),Source::Salt('salt'));
+    setup.provider.request_random(CONSUMER1(), Source::Salt('salt'));
 
-    submit_random(
-        setup.provider,
-        SEED,
-        proof(),
-    );
+    submit_random(setup.provider, SEED, proof(),);
 
     // PLAYER1 consume
     start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1());
