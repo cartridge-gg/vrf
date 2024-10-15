@@ -78,7 +78,6 @@ pub mod VrfProviderComponent {
         pub const PUBKEY_ZERO: felt252 = 'VrfProvider: pubkey is zero';
         pub const INVALID_PROOF: felt252 = 'VrfProvider: invalid proof';
         pub const NOT_FULFILLED: felt252 = 'VrfProvider: not fulfilled';
-        pub const SEED_MISMATCH: felt252 = 'VrfProvider: seed mismatch';
         pub const NOT_CONSUMED: felt252 = 'VrfProvider: not consumed';
     }
 
@@ -120,7 +119,7 @@ pub mod VrfProviderComponent {
                     poseidon_hash_span(array![salt, caller.into(), tx_info.chain_id].span())
                 },
             };
-            
+
             // Always return 0 during fee estimation to avoid leaking vrf info.
             if tx_info.max_fee == 0 {
                 // simulate consumed

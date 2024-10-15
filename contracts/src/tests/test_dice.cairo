@@ -9,13 +9,13 @@ use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 use openzeppelin_utils::serde::SerializedAppend;
 
 use cartridge_vrf::vrf_provider::vrf_provider::VrfProvider;
-use cartridge_vrf::vrf_provider::vrf_provider_component::{
+use cartridge_vrf::{
     IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source
 };
 
-use cartridge_vrf::vrf_consumer::vrf_consumer_example::{
-    VrfConsumer, IVrfConsumerExample, IVrfConsumerExampleDispatcher,
-    IVrfConsumerExampleDispatcherTrait
+use super::vrf_consumer_mock::{
+    VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher,
+    IVrfConsumerMockDispatcherTrait
 };
 
 use super::common::{setup, submit_random, SetupResult, CONSUMER1, CONSUMER2, PLAYER1};
@@ -25,7 +25,9 @@ use super::common::{setup, submit_random, SetupResult, CONSUMER1, CONSUMER2, PLA
 
 const SEED: felt252 = 0x334b8c0ea68406b183b5affd81ce11bec1a0807d3fd68a54ee75ec148053b09;
 
-// curl -X POST -H "Content-Type: application/json" -d '{"seed": ["0x334b8c0ea68406b183b5affd81ce11bec1a0807d3fd68a54ee75ec148053b09"]}' http://0.0.0.0:3000/stark_vrf
+// curl -X POST -H "Content-Type: application/json" -d '{"seed":
+// ["0x334b8c0ea68406b183b5affd81ce11bec1a0807d3fd68a54ee75ec148053b09"]}'
+// http://0.0.0.0:3000/stark_vrf
 pub fn proof() -> Proof {
     Proof {
         gamma: Point {
@@ -40,7 +42,9 @@ pub fn proof() -> Proof {
 
 const SEED_FROM_SALT: felt252 = 0x767EBFD1241683397A6CB06FDE012811BB27FD6E768D7A4BB8670ED10DF95C0;
 
-// curl -X POST -H "Content-Type: application/json" -d '{"seed": ["0x767EBFD1241683397A6CB06FDE012811BB27FD6E768D7A4BB8670ED10DF95C0"]}' http://0.0.0.0:3000/stark_vrf
+// curl -X POST -H "Content-Type: application/json" -d '{"seed":
+// ["0x767EBFD1241683397A6CB06FDE012811BB27FD6E768D7A4BB8670ED10DF95C0"]}'
+// http://0.0.0.0:3000/stark_vrf
 pub fn proof_from_salt() -> Proof {
     Proof {
         gamma: Point {

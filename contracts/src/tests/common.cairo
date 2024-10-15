@@ -10,9 +10,9 @@ use cartridge_vrf::vrf_provider::vrf_provider_component::{
     IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey,
 };
 
-use cartridge_vrf::vrf_consumer::vrf_consumer_example::{
-    VrfConsumer, IVrfConsumerExample, IVrfConsumerExampleDispatcher,
-    IVrfConsumerExampleDispatcherTrait
+use super::vrf_consumer_mock::{
+    VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher,
+    IVrfConsumerMockDispatcherTrait
 };
 
 pub fn PROVIDER() -> ContractAddress {
@@ -34,8 +34,8 @@ pub fn PLAYER1() -> ContractAddress {
 #[derive(Drop, Copy, Clone)]
 pub struct SetupResult {
     provider: IVrfProviderDispatcher,
-    consumer1: IVrfConsumerExampleDispatcher,
-    consumer2: IVrfConsumerExampleDispatcher,
+    consumer1: IVrfConsumerMockDispatcher,
+    consumer2: IVrfConsumerMockDispatcher,
 }
 
 // lauch vrf-server : cargo run -r -- -s 420
@@ -65,8 +65,8 @@ pub fn setup() -> SetupResult {
 
     SetupResult {
         provider: IVrfProviderDispatcher { contract_address: PROVIDER() },
-        consumer1: IVrfConsumerExampleDispatcher { contract_address: CONSUMER1() },
-        consumer2: IVrfConsumerExampleDispatcher { contract_address: CONSUMER2() },
+        consumer1: IVrfConsumerMockDispatcher { contract_address: CONSUMER1() },
+        consumer2: IVrfConsumerMockDispatcher { contract_address: CONSUMER2() },
     }
 }
 
