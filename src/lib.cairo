@@ -5,7 +5,10 @@ pub mod vrf_provider {
 
 pub mod vrf_consumer {
     pub mod vrf_consumer_component;
-    pub mod vrf_consumer_example;
+}
+
+pub mod mocks {
+    pub mod vrf_consumer_mock;
 }
 
 pub use vrf_provider::vrf_provider_component::{

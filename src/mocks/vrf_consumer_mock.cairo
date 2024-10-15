@@ -1,8 +1,6 @@
-// SPDX-License-Identifier: MIT
-// Compatible with OpenZeppelin Contracts for Cairo ^0.16.0
 
 #[starknet::interface]
-trait IVrfConsumerExample<TContractState> {
+trait IVrfConsumerMock<TContractState> {
     fn dice(ref self: TContractState) -> u8;
     fn dice_with_salt(ref self: TContractState) -> u8;
 
@@ -24,7 +22,7 @@ mod VrfConsumer {
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
     use cartridge_vrf::vrf_consumer::vrf_consumer_component::{VrfConsumerComponent};
-    use cartridge_vrf::vrf_provider::vrf_provider_component::Source;
+    use cartridge_vrf::Source;
 
     component!(path: VrfConsumerComponent, storage: vrf_consumer, event: VrfConsumerEvent);
 
@@ -52,7 +50,7 @@ mod VrfConsumer {
     }
 
     #[abi(embed_v0)]
-    impl ConsumerImpl of super::IVrfConsumerExample<ContractState> {
+    impl ConsumerImpl of super::IVrfConsumerMock<ContractState> {
         // throw dice
         fn dice(ref self: ContractState) -> u8 {
             let player_id = get_caller_address();
@@ -69,7 +67,7 @@ mod VrfConsumer {
 
         fn not_consuming(ref self: ContractState) {
             let _player_id = get_caller_address();
-        // do the nothing
+            // do the nothing
         }
 
         fn set_vrf_provider(ref self: ContractState, new_vrf_provider: ContractAddress) {

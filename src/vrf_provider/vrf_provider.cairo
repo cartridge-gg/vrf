@@ -9,7 +9,7 @@ mod VrfProvider {
     use openzeppelin::upgrades::interface::IUpgradeable;
 
     use cartridge_vrf::vrf_provider::vrf_provider_component::VrfProviderComponent;
-    use cartridge_vrf::vrf_provider::vrf_provider_component::PublicKey;
+    use cartridge_vrf::PublicKey;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);

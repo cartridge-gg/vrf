@@ -2,6 +2,17 @@
 version = 1
 
 [[package]]
+name = "cartridge_vrf"
+version = "0.1.0"
+dependencies = [
+ "openzeppelin",
+ "openzeppelin_testing",
+ "openzeppelin_utils",
+ "snforge_std",
+ "stark_vrf",
+]
+
+[[package]]
 name = "openzeppelin"
 version = "0.15.0-rc.0"
 source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
@@ -104,14 +115,3 @@ source = "git+https://github.com/foundry-rs/starknet-foundry.git?tag=v0.26.0#50e
 name = "stark_vrf"
 version = "0.1.0"
 source = "git+https://github.com/dojoengine/stark-vrf.git#96d6d2a88b1ef46c4a285d0ccc334237205edae3"
-
-[[package]]
-name = "vrf_contracts"
-version = "0.1.0"
-dependencies = [
- "openzeppelin",
- "openzeppelin_testing",
- "openzeppelin_utils",
- "snforge_std",
- "stark_vrf",
-]

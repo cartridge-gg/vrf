@@ -8,6 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Format
+        working-directory: ./server
         run: cargo fmt --all -- --check
 
   clippy:
@@ -15,8 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Clippy
+        working-directory: ./server
         run: cargo clippy --fix
       - name: Check for diff
+        working-directory: ./server
         run: git diff --exit-code
 
   build:
@@ -24,6 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
+        working-directory: ./server
         run: cargo build --verbose
 
   test:
@@ -34,4 +38,5 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run tests
+        working-directory: ./server
         run: cargo test --workspace --verbose
