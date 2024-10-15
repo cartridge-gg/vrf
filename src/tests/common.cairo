@@ -10,7 +10,7 @@ use cartridge_vrf::vrf_provider::vrf_provider_component::{
     IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey,
 };
 
-use super::vrf_consumer_mock::{
+use cartridge_vrf::mocks::vrf_consumer_mock::{
     VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher,
     IVrfConsumerMockDispatcherTrait
 };
