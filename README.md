@@ -15,15 +15,15 @@ This Cartridge Verfiable Random Function (VRF) is designed to provide cheap, ato
 ## How It Works
 
 1.  A game calls `request_random(caller, source)` as the first call in their multicall.
-2.  A game contract calls `consume_random(source)` from the VRF contract.
+2.  A game contract calls `consume_random(source)` on the VRF contract.
 3.  The VRF server generates a random value using the VRF algorithm for the provided entropy source.
 4.  The Cartridge Paymaster wraps the players multicall with a `submit_random` and `assert_consumed` call.
-5.  The random value is immediately available and can be used within the same transaction.
-6.  The VRF proof is verified onchain, ensuring the integrity of the random value.
+5.  The `submit_random` call submit a VRF Proof for the request, the VRF Proof is verified onchain, ensuring the integrity of the random value which is immediately available and must be used within the same transaction.
+6.  The `assert_consumed` call ensures that `consume_random(source)` has been called, it also reset the storage used to store the random value during the transaction to 0.
 
 ## Benefits for Game Developers
 
--   **Simplicity**: Easy integration with existing Starknet smart contracts.
+-   **Simplicity**: Easy integration with existing Starknet smart contracts and Dojo.
 -   **Performance**: Synchronous randomness generation without waiting for multiple transactions.
 -   **Cost-effectiveness**: Potential cost savings through Paymaster integration.
 -   **Security**: Cryptographically secure randomness that's fully verifiable onchain.
@@ -66,7 +66,8 @@ fn roll_dice(ref self: ContractState) {
     // Your game logic here...
 
     // Consume random value
-    let random_value = vrf_provider.consume_random(Source::Salt('SALT'));
+    let player_id = get_caller_address();
+    let random_value = vrf_provider.consume_random(Source::Nonce(player_id));
 
     // Use the random value in your game logic
     // ...
@@ -75,8 +76,11 @@ fn roll_dice(ref self: ContractState) {
 
 5.  You can use either `Source::Nonce(ContractAddress)` or `Source::Salt(felt252)` as the source for randomness:
 
-    -   `Source::Nonce(ContractAddress)`: Uses the contract's address and an internal nonce for randomness.
-    -   `Source::Salt(felt252)`: Uses a provided salt value for randomness.
+    -   `Source::Nonce(ContractAddress)`: Uses the provided contract address internal nonce for randomness. \
+    Each request will generate a different seed ensuring unique random values.
+   
+    -   `Source::Salt(felt252)`: Uses a provided salt value for randomness. \
+    Two requests with same salts will result in same random value.
 
 ## Executing VRF transactions
 
@@ -90,8 +94,8 @@ const call = await account.execute([
     entrypoint: 'request_random',
     calldata: CallData.compile({
       caller: GAME_CONTRACT,
-      // User provided Salt
-      source: [1, SALT],
+      // Using Source::Nonce(address)
+      source: [0, address],
     }),
   },
   {
