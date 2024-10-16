@@ -14,8 +14,7 @@ use cartridge_vrf::{
 };
 
 use cartridge_vrf::mocks::vrf_consumer_mock::{
-    VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher,
-    IVrfConsumerMockDispatcherTrait
+    VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher, IVrfConsumerMockDispatcherTrait
 };
 
 use super::common::{setup, submit_random, SetupResult, CONSUMER1, CONSUMER2, PLAYER1};
