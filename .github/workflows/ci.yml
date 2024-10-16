@@ -2,6 +2,7 @@ name: ci
 on: push
 env:
   CARGO_TERM_COLOR: always
+  SCARB_VERSION: 2.7.0
 jobs:
   fmt:
     runs-on: ubuntu-latest
@@ -40,3 +41,33 @@ jobs:
       - name: Run tests
         working-directory: ./server
         run: cargo test --workspace --verbose
+
+  check-cairo:
+    runs-on: ubuntu-latest
+    name: Check cartridge-vrf format
+    steps:
+      - uses: actions/checkout@v4
+      - uses: software-mansion/setup-scarb@v1
+        with:
+           scarb-version: ${{ env.SCARB_VERSION }}
+      - name: Format
+        run: scarb fmt --check
+
+  build-cairo:
+    needs: check-cairo
+    runs-on: ubuntu-latest
+    name: Build cartridge-vrf
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: scarb build
+
+  test-cairo:
+     needs: [check-cairo, build-cairo]
+     runs-on: ubuntu-latest
+     name: Test cartridge-vrf
+     steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/setup-snfoundry@v3
+      - name: Test
+        run: snforge test
