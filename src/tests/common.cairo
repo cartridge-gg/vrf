@@ -11,8 +11,7 @@ use cartridge_vrf::vrf_provider::vrf_provider_component::{
 };
 
 use cartridge_vrf::mocks::vrf_consumer_mock::{
-    VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher,
-    IVrfConsumerMockDispatcherTrait
+    VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher, IVrfConsumerMockDispatcherTrait
 };
 
 pub fn PROVIDER() -> ContractAddress {

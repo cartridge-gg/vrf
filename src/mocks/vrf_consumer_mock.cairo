@@ -1,4 +1,3 @@
-
 #[starknet::interface]
 trait IVrfConsumerMock<TContractState> {
     fn dice(ref self: TContractState) -> u8;
