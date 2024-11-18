@@ -121,7 +121,9 @@ pub mod VrfProviderComponent {
             };
 
             // Always return 0 during fee estimation to avoid leaking vrf info.
-            if tx_info.max_fee == 0 {
+            if tx_info.max_fee == 0
+                && *tx_info.resource_bounds.at(0).max_amount == 0
+                && *tx_info.resource_bounds.at(1).max_amount == 0 {
                 // simulate consumed
                 self.VrfProvider_random.write(seed, 0);
                 return 0;
