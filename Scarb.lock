@@ -5,111 +5,60 @@ version = 1
 name = "cartridge_vrf"
 version = "0.1.0"
 dependencies = [
- "openzeppelin",
+ "openzeppelin_access",
  "openzeppelin_testing",
+ "openzeppelin_upgrades",
  "openzeppelin_utils",
  "snforge_std",
  "stark_vrf",
 ]
 
 [[package]]
-name = "openzeppelin"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
-dependencies = [
- "openzeppelin_access",
- "openzeppelin_account",
- "openzeppelin_governance",
- "openzeppelin_introspection",
- "openzeppelin_presets",
- "openzeppelin_security",
- "openzeppelin_token",
- "openzeppelin_upgrades",
- "openzeppelin_utils",
-]
-
-[[package]]
 name = "openzeppelin_access"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
+version = "0.19.0"
+source = "git+https://github.com/openzeppelin/cairo-contracts?tag=v0.19.0#8d49e8c445efd9bdc99b050c8b7d11ae5ad19628"
 dependencies = [
  "openzeppelin_introspection",
  "openzeppelin_utils",
-]
-
-[[package]]
-name = "openzeppelin_account"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
-dependencies = [
- "openzeppelin_introspection",
- "openzeppelin_token",
- "openzeppelin_utils",
-]
-
-[[package]]
-name = "openzeppelin_governance"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
-dependencies = [
- "openzeppelin_access",
- "openzeppelin_introspection",
 ]
 
 [[package]]
 name = "openzeppelin_introspection"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
-
-[[package]]
-name = "openzeppelin_presets"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
-dependencies = [
- "openzeppelin_access",
- "openzeppelin_account",
- "openzeppelin_introspection",
- "openzeppelin_token",
- "openzeppelin_upgrades",
-]
-
-[[package]]
-name = "openzeppelin_security"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
+version = "0.19.0"
+source = "git+https://github.com/openzeppelin/cairo-contracts?tag=v0.19.0#8d49e8c445efd9bdc99b050c8b7d11ae5ad19628"
 
 [[package]]
 name = "openzeppelin_testing"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
+version = "0.19.0"
+source = "git+https://github.com/openzeppelin/cairo-contracts?tag=v0.19.0#8d49e8c445efd9bdc99b050c8b7d11ae5ad19628"
 dependencies = [
  "snforge_std",
 ]
 
 [[package]]
-name = "openzeppelin_token"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
-dependencies = [
- "openzeppelin_account",
- "openzeppelin_governance",
- "openzeppelin_introspection",
-]
-
-[[package]]
 name = "openzeppelin_upgrades"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
+version = "0.19.0"
+source = "git+https://github.com/openzeppelin/cairo-contracts?tag=v0.19.0#8d49e8c445efd9bdc99b050c8b7d11ae5ad19628"
 
 [[package]]
 name = "openzeppelin_utils"
-version = "0.15.0-rc.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?rev=a13bae3#a13bae3390a7114a8c14c0352c6898eff5f4f5d7"
+version = "0.19.0"
+source = "git+https://github.com/openzeppelin/cairo-contracts?tag=v0.19.0#8d49e8c445efd9bdc99b050c8b7d11ae5ad19628"
+
+[[package]]
+name = "snforge_scarb_plugin"
+version = "0.31.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:1fce075fcbf7fce1b0935f6f9a034549704837fb221da212d3b6e9134cebfdaa"
 
 [[package]]
 name = "snforge_std"
-version = "0.26.0"
-source = "git+https://github.com/foundry-rs/starknet-foundry.git?tag=v0.26.0#50eb589db65e113efe4f09241feb59b574228c7e"
+version = "0.31.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:60ac980b297281f9a59a5f1668cb56bdea1b28fd2f8008008270f9a3c91ad3ba"
+dependencies = [
+ "snforge_scarb_plugin",
+]
 
 [[package]]
 name = "stark_vrf"
