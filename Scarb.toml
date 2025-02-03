@@ -4,15 +4,15 @@ version = "0.1.0"
 edition = "2023_10"
 
 [dependencies]
-starknet = "2.8.5"
+starknet = "2.8.4   "
 stark_vrf = { git = "https://github.com/dojoengine/stark-vrf.git" }
-openzeppelin_access = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.19.0"}
-openzeppelin_upgrades = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.19.0"}
+openzeppelin_access = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.18.0"}
+openzeppelin_upgrades = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.18.0"}
 snforge_std = "0.31.0"
 
 [dev-dependencies]
-openzeppelin_testing = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.19.0"}
-openzeppelin_utils = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.19.0"}
+openzeppelin_testing = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.18.0"}
+openzeppelin_utils = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.18.0"}
 
 [[target.starknet-contract]]
 allowed-libfuncs-list.name = "experimental"
