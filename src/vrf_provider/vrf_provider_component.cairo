@@ -38,7 +38,7 @@ pub mod VrfProviderComponent {
     use core::poseidon::poseidon_hash_span;
     use starknet::storage::Map;
 
-    use openzeppelin::access::ownable::{
+    use openzeppelin_access::ownable::{
         OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl
     };
 

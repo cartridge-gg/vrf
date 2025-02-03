@@ -15,8 +15,8 @@ mod VrfConsumer {
     use starknet::{ClassHash, ContractAddress, get_caller_address, get_contract_address};
     use starknet::storage::Map;
 
-    use openzeppelin::upgrades::UpgradeableComponent;
-    use openzeppelin::upgrades::interface::IUpgradeable;
+    use openzeppelin_upgrades::UpgradeableComponent;
+    use openzeppelin_upgrades::interface::IUpgradeable;
 
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
