@@ -12,14 +12,14 @@ trait IVrfConsumer<TContractState> {
 pub mod VrfConsumerComponent {
     use starknet::{
         ContractAddress, contract_address::ContractAddressZeroable, get_caller_address,
-        get_contract_address
+        get_contract_address,
     };
     use starknet::storage::Map;
 
     use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
     use cartridge_vrf::{
-        IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source
+        IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source,
     };
 
     #[storage]
@@ -70,12 +70,12 @@ pub mod VrfConsumerComponent {
             self.vrf_provider_disp().consume_random(source)
         }
 
-        fn vrf_provider_disp(self: @ComponentState<TContractState>,) -> IVrfProviderDispatcher {
+        fn vrf_provider_disp(self: @ComponentState<TContractState>) -> IVrfProviderDispatcher {
             IVrfProviderDispatcher { contract_address: self.VrfConsumer_vrf_provider.read() }
         }
 
         fn set_vrf_provider(
-            ref self: ComponentState<TContractState>, new_vrf_provider: ContractAddress
+            ref self: ComponentState<TContractState>, new_vrf_provider: ContractAddress,
         ) {
             assert(new_vrf_provider != ContractAddressZeroable::zero(), Errors::ADDRESS_ZERO);
             self.VrfConsumer_vrf_provider.write(new_vrf_provider);
