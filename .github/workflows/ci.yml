@@ -2,7 +2,7 @@ name: ci
 on: push
 env:
   CARGO_TERM_COLOR: always
-  SCARB_VERSION: 2.7.0
+  SCARB_VERSION: 2.9.2
 jobs:
   fmt:
     runs-on: ubuntu-latest
