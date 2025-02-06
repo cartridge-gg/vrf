@@ -36,6 +36,6 @@ mod vrf_provider_mock {
 
     fn dojo_init(ref self: ContractState, pubkey_x: felt252, pubkey_y: felt252) {
         self.ownable.initializer(starknet::get_caller_address());
-        self.vrf_provider.initializer(PublicKey { x: pubkey_x, y: pubkey_y, });
+        self.vrf_provider.initializer(PublicKey { x: pubkey_x, y: pubkey_y });
     }
 }

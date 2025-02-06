@@ -39,7 +39,7 @@ pub mod VrfProviderComponent {
     use starknet::storage::Map;
 
     use openzeppelin_access::ownable::{
-        OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl
+        OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl,
     };
 
     use super::{PublicKey, Source};
@@ -89,7 +89,7 @@ pub mod VrfProviderComponent {
         impl Owner: OwnableComponent::HasComponent<TContractState>,
     > of super::IVrfProvider<ComponentState<TContractState>> {
         fn request_random(
-            self: @ComponentState<TContractState>, caller: ContractAddress, source: Source
+            self: @ComponentState<TContractState>, caller: ContractAddress, source: Source,
         ) {}
 
         fn submit_random(ref self: ComponentState<TContractState>, seed: felt252, proof: Proof) {
@@ -105,7 +105,7 @@ pub mod VrfProviderComponent {
             self.emit(SubmitRandom { seed, proof });
         }
 
-        fn consume_random(ref self: ComponentState<TContractState>, source: Source,) -> felt252 {
+        fn consume_random(ref self: ComponentState<TContractState>, source: Source) -> felt252 {
             let caller = get_caller_address();
             let tx_info = starknet::get_execution_info().tx_info.unbox();
 
@@ -156,7 +156,7 @@ pub mod VrfProviderComponent {
 
     #[generate_trait]
     pub impl InternalImpl<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>,
     > of InternalTrait<TContractState> {
         fn initializer(ref self: ComponentState<TContractState>, pubkey: PublicKey) {
             self._set_public_key(pubkey);

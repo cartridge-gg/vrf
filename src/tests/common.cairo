@@ -1,7 +1,7 @@
 use openzeppelin_testing as utils;
 use openzeppelin_utils::serde::SerializedAppend;
 use snforge_std::{
-    start_cheat_caller_address, stop_cheat_caller_address, start_cheat_max_fee_global
+    start_cheat_caller_address, stop_cheat_caller_address, start_cheat_max_fee_global,
 };
 use starknet::{ContractAddress, contract_address_const};
 use stark_vrf::ecvrf::Proof;
@@ -13,7 +13,7 @@ use cartridge_vrf::vrf_provider::vrf_provider_component::{
 };
 
 use cartridge_vrf::mocks::vrf_consumer_mock::{
-    VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher, IVrfConsumerMockDispatcherTrait
+    VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher, IVrfConsumerMockDispatcherTrait,
 };
 
 pub fn PROVIDER() -> ContractAddress {
@@ -51,7 +51,7 @@ pub fn setup() -> SetupResult {
             PublicKey {
                 x: 0x66da5d53168d591c55d4c05f3681663ac51bcdccd5ca09e366b71b0c40ccff4,
                 y: 0x6d3eb29920bf55195e5ec76f69e247c0942c7ef85f6640896c058ec75ca2232,
-            }
+            },
         );
 
     utils::declare_and_deploy_at("VrfProvider", PROVIDER(), provider_calldata);

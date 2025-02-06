@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2023_10"
 
 [dependencies]
-starknet = "2.9.2   "
+starknet = "2.9.2"
 stark_vrf = { git = "https://github.com/dojoengine/stark-vrf.git" }
 openzeppelin_access = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.18.0" }
 openzeppelin_upgrades = { git = "https://github.com/openzeppelin/cairo-contracts", tag = "v0.18.0" }
