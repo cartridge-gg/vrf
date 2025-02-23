@@ -121,11 +121,11 @@ pub mod VrfProviderComponent {
             };
 
             // Always return 0 during fee estimation to avoid leaking vrf info.
-            if tx_info.max_fee == 0 {
-                // simulate consumed
-                self.VrfProvider_random.write(seed, 0);
-                return 0;
-            }
+            // if tx_info.max_fee == 0 {
+            //     // simulate consumed
+            //     self.VrfProvider_random.write(seed, 0);
+            //     return 0;
+            // }
 
             let random = self.VrfProvider_random.read(seed);
             assert(random != 0, Errors::NOT_FULFILLED);
