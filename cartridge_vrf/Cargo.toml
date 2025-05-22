@@ -1,0 +1,12 @@
+[package]
+name = "cartridge_vrf"
+edition = "2021"
+version = "0.1.0"
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+lazy_static = "1"
+# 0.12 to keep compatibility with Katana at the moment.
+starknet = "0.12.0"
