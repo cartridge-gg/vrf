@@ -1,8 +1,8 @@
+use stark_vrf::ecvrf::{ECVRFImpl, Point, Proof};
 use starknet::ContractAddress;
-use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 
 #[starknet::interface]
-trait IVrfProvider<TContractState> {
+pub trait IVrfProvider<TContractState> {
     fn request_random(self: @TContractState, caller: ContractAddress, source: Source);
     fn submit_random(ref self: TContractState, seed: felt252, proof: Proof);
     fn consume_random(ref self: TContractState, source: Source) -> felt252;
@@ -14,8 +14,8 @@ trait IVrfProvider<TContractState> {
 
 #[derive(Drop, Copy, Clone, Serde, starknet::Store)]
 pub struct PublicKey {
-    x: felt252,
-    y: felt252,
+    pub x: felt252,
+    pub y: felt252,
 }
 
 impl PublicKeyIntoPoint of Into<PublicKey, Point> {
@@ -33,21 +33,19 @@ pub enum Source {
 
 #[starknet::component]
 pub mod VrfProviderComponent {
-    use starknet::ContractAddress;
-    use starknet::get_caller_address;
     use core::poseidon::poseidon_hash_span;
-    use starknet::storage::Map;
-
-    use openzeppelin_access::ownable::{
-        OwnableComponent, OwnableComponent::InternalImpl as OwnableInternalImpl,
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::access::ownable::OwnableComponent::InternalImpl as OwnableInternalImpl;
+    use stark_vrf::ecvrf::{ECVRFImpl, Point, Proof};
+    use starknet::storage::{
+        Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
     };
-
+    use starknet::{ContractAddress, get_caller_address};
     use super::{PublicKey, Source};
 
-    use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
-
     #[storage]
-    struct Storage {
+    pub struct Storage {
         VrfProvider_pubkey: PublicKey,
         // wallet -> nonce
         VrfProvider_nonces: Map<ContractAddress, felt252>,
@@ -69,7 +67,7 @@ pub mod VrfProviderComponent {
 
     #[derive(Drop, starknet::Event)]
     #[event]
-    enum Event {
+    pub enum Event {
         PublicKeyChanged: PublicKeyChanged,
         SubmitRandom: SubmitRandom,
     }

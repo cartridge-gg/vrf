@@ -1,23 +1,8 @@
-use openzeppelin_testing as utils;
-use utils::constants::{OWNER, AUTHORIZED, CALLER, OTHER, ZERO};
-use starknet::{ClassHash, ContractAddress, contract_address_const};
-
+use cartridge_vrf::mocks::vrf_consumer_mock::IVrfConsumerMockDispatcherTrait;
+use cartridge_vrf::{IVrfProviderDispatcherTrait, Source};
 use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
-
-use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
-
-use openzeppelin_utils::serde::SerializedAppend;
-
-use cartridge_vrf::vrf_provider::vrf_provider::VrfProvider;
-use cartridge_vrf::{
-    IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source,
-};
-
-use cartridge_vrf::mocks::vrf_consumer_mock::{
-    VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher, IVrfConsumerMockDispatcherTrait,
-};
-
-use super::common::{setup, submit_random, SetupResult, CONSUMER1, CONSUMER2, PLAYER1};
+use stark_vrf::ecvrf::{ECVRFImpl, Point, Proof};
+use super::common::{CONSUMER1, PLAYER1, setup, submit_random};
 
 // private key: 420
 // {"public_key_x":"0x66da5d53168d591c55d4c05f3681663ac51bcdccd5ca09e366b71b0c40ccff4","public_key_y":"0x6d3eb29920bf55195e5ec76f69e247c0942c7ef85f6640896c058ec75ca2232"}
@@ -60,12 +45,12 @@ pub fn proof_from_salt() -> Proof {
 fn test_dice() {
     let setup = setup();
 
-    setup.provider.request_random(CONSUMER1(), Source::Nonce(PLAYER1()));
+    setup.provider.request_random(CONSUMER1, Source::Nonce(PLAYER1));
 
     submit_random(setup.provider, SEED, proof());
 
     // PLAYER1 call dice, CONSUMER1 is caller of consume_random
-    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1());
+    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1);
     let dice1 = setup.consumer1.dice();
     assert(dice1 == 3, 'dice1 should be 3');
     stop_cheat_caller_address(setup.consumer1.contract_address);
@@ -79,12 +64,12 @@ fn test_not_consuming__must_consume() {
     let setup = setup();
 
     // noop just here for example
-    setup.provider.request_random(CONSUMER1(), Source::Nonce(PLAYER1()));
+    setup.provider.request_random(CONSUMER1, Source::Nonce(PLAYER1));
 
     submit_random(setup.provider, SEED, proof());
 
     // PLAYER1 dont consume
-    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1());
+    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1);
     setup.consumer1.not_consuming();
 
     stop_cheat_caller_address(setup.consumer1.contract_address);
@@ -97,14 +82,14 @@ fn test_dice__cannot_consume_twice() {
     let setup = setup();
 
     // noop just here for example
-    setup.provider.request_random(CONSUMER1(), Source::Nonce(PLAYER1()));
+    setup.provider.request_random(CONSUMER1, Source::Nonce(PLAYER1));
 
     // provider submit_random
     submit_random(setup.provider, SEED, proof());
 
     // PLAYER1 consume twice
-    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1());
-    start_cheat_caller_address(setup.consumer2.contract_address, PLAYER1());
+    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1);
+    start_cheat_caller_address(setup.consumer2.contract_address, PLAYER1);
 
     let _dice1 = setup.consumer1.dice();
     let _dice2 = setup.consumer1.dice();
@@ -115,12 +100,12 @@ fn test_dice_with_salt() {
     let setup = setup();
 
     // noop just here for example
-    setup.provider.request_random(CONSUMER1(), Source::Salt('salt'));
+    setup.provider.request_random(CONSUMER1, Source::Salt('salt'));
 
     submit_random(setup.provider, SEED_FROM_SALT, proof_from_salt());
 
     // PLAYER1 call dice_with_salt, CONSUMER1 is caller of consume_random
-    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1());
+    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1);
     let dice1 = setup.consumer1.dice_with_salt();
     assert(dice1 == 2, 'dice1 should be 2');
     stop_cheat_caller_address(setup.consumer1.contract_address);
@@ -134,11 +119,11 @@ fn test_dice_with_salt__wrong_proof() {
     let setup = setup();
 
     // noop just here for example
-    setup.provider.request_random(CONSUMER1(), Source::Salt('salt'));
+    setup.provider.request_random(CONSUMER1, Source::Salt('salt'));
 
     submit_random(setup.provider, SEED, proof());
 
     // PLAYER1 consume
-    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1());
+    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1);
     let _dice1 = setup.consumer1.dice_with_salt();
 }

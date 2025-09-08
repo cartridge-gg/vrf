@@ -2,7 +2,7 @@
 mod vrf_provider_mock {
     use starknet::{ContractAddress, ClassHash};
 
-    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin_access::ownable::OwnableComponent;
 
     use cartridge_vrf::vrf_provider::vrf_provider_component::VrfProviderComponent;
     use cartridge_vrf::PublicKey;

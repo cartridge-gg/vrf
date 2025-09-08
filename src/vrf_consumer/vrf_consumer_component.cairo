@@ -1,6 +1,6 @@
-use starknet::ContractAddress;
-use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
 use cartridge_vrf::PublicKey;
+use stark_vrf::ecvrf::ECVRFImpl;
+use starknet::ContractAddress;
 
 #[starknet::interface]
 trait IVrfConsumer<TContractState> {
@@ -10,20 +10,14 @@ trait IVrfConsumer<TContractState> {
 
 #[starknet::component]
 pub mod VrfConsumerComponent {
-    use starknet::{
-        ContractAddress, contract_address::ContractAddressZeroable, get_caller_address,
-        get_contract_address,
-    };
-    use starknet::storage::Map;
-
-    use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
-
-    use cartridge_vrf::{
-        IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source,
-    };
+    use cartridge_vrf::{IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source};
+    use core::num::traits::Zero;
+    use stark_vrf::ecvrf::ECVRFImpl;
+    use starknet::ContractAddress;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
-    struct Storage {
+    pub struct Storage {
         VrfConsumer_vrf_provider: ContractAddress,
     }
 
@@ -34,7 +28,7 @@ pub mod VrfConsumerComponent {
 
     #[derive(Drop, starknet::Event)]
     #[event]
-    enum Event {
+    pub enum Event {
         VrfProviderChanged: VrfProviderChanged,
     }
 
@@ -77,7 +71,7 @@ pub mod VrfConsumerComponent {
         fn set_vrf_provider(
             ref self: ComponentState<TContractState>, new_vrf_provider: ContractAddress,
         ) {
-            assert(new_vrf_provider != ContractAddressZeroable::zero(), Errors::ADDRESS_ZERO);
+            assert(!new_vrf_provider.is_zero(), Errors::ADDRESS_ZERO);
             self.VrfConsumer_vrf_provider.write(new_vrf_provider);
 
             self.emit(VrfProviderChanged { address: new_vrf_provider })
