@@ -11,8 +11,6 @@ snforge_std = "0.48.1"
 
 [dev-dependencies]
 openzeppelin_testing = "=4.6.0"
-# openzeppelin_testing = "2.0.0"
-# openzeppelin_utils = "2.0.0"
 
 [[target.starknet-contract]]
 allowed-libfuncs-list.name = "experimental"
