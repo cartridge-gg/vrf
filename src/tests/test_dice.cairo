@@ -7,22 +7,23 @@ use super::common::{CONSUMER1, PLAYER1, setup, submit_random};
 // private key: 420
 // {"public_key_x":"0x66da5d53168d591c55d4c05f3681663ac51bcdccd5ca09e366b71b0c40ccff4","public_key_y":"0x6d3eb29920bf55195e5ec76f69e247c0942c7ef85f6640896c058ec75ca2232"}
 
-const SEED: felt252 = 0x334b8c0ea68406b183b5affd81ce11bec1a0807d3fd68a54ee75ec148053b09;
+const SEED: felt252 = 0x148c79e57bc0ce25e079841517ce9d3499094429644b7288df57a4a16b27721;
 
 // curl -X POST -H "Content-Type: application/json" -d '{"seed":
-// ["0x334b8c0ea68406b183b5affd81ce11bec1a0807d3fd68a54ee75ec148053b09"]}'
+// ["0x148c79e57bc0ce25e079841517ce9d3499094429644b7288df57a4a16b27721"]}'
 // http://0.0.0.0:3000/stark_vrf
 pub fn proof() -> Proof {
     Proof {
         gamma: Point {
-            x: 0xf010d3727eb8aee76c7bc81f399805f4c2c39708451d933ef4d7f909248a6d,
-            y: 0x18a8fab3c58608505953d0fa0376ab454907d6e88db83702a36294faa937ac8,
+            x: 0x1b2146bdf5ef6d13d36e1731bcca759f5cc75baef29cd8d2db2d05356913304,
+            y: 0x2ece98350f2ba9dfa54c7cead948912c5c6ab609afcc4a2af726094418c3318,
         },
-        c: 0x10e06538fdb8d943ecbf03e519500e258a83248d5a457ff2803c54c583f6302,
-        s: 0x150f672c657e116cd3966b74a2320e600c853801612b56f3a9cb31063f763c6,
-        sqrt_ratio_hint: 0x8b09cf018201f7702d638b23d3cd10f577f7973369e79e5974ab33c1d64e01,
+        c: 0x3c6d3f3af11babb561b90643cff6a115db6ee91b017d0b5e8b716f1ec8eb0a2,
+        s: 0x372acefcab4435982285495fbfa4ce6a8608e5b1dfdf9a31ac7df73a92ca202,
+        sqrt_ratio_hint: 0x192ddce2f2872355bec6d18b4c6bb8033df94aa57e42442d78d41a9c91ce425,
     }
 }
+
 
 const SEED_FROM_SALT: felt252 = 0x767EBFD1241683397A6CB06FDE012811BB27FD6E768D7A4BB8670ED10DF95C0;
 

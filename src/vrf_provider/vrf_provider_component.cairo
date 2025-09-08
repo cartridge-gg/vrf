@@ -111,7 +111,7 @@ pub mod VrfProviderComponent {
                 Source::Nonce(addr) => {
                     let nonce = self.VrfProvider_nonces.read(addr);
                     self.VrfProvider_nonces.write(addr, nonce + 1);
-                    poseidon_hash_span(array![nonce, caller.into(), tx_info.chain_id].span())
+                    poseidon_hash_span(array![nonce, addr.into(), caller.into(), tx_info.chain_id].span())
                 },
                 Source::Salt(salt) => {
                     poseidon_hash_span(array![salt, caller.into(), tx_info.chain_id].span())
