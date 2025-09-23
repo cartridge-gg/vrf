@@ -1,23 +1,21 @@
 [package]
 name = "cartridge_vrf"
 version = "0.1.0"
-edition = "2023_10"
+edition = "2024_07"
 
 [dependencies]
-starknet = "2.9.2"
+starknet = "^2.12.1"
 stark_vrf = { git = "https://github.com/dojoengine/stark-vrf.git" }
-openzeppelin_access = "0.18.0"
-openzeppelin_upgrades = "0.18.0"
-snforge_std = "0.31.0"
+openzeppelin = "2.0.0"
+snforge_std = "0.48.1"
 
 [dev-dependencies]
-openzeppelin_testing = "0.18.0"
-openzeppelin_utils = "0.18.0"
+openzeppelin_testing = "=4.6.0"
 
 [[target.starknet-contract]]
 allowed-libfuncs-list.name = "experimental"
 
 [lib]
 
-[script]
+[scripts]
 test = "snforge test"

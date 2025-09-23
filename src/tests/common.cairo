@@ -1,42 +1,28 @@
-use openzeppelin_testing as utils;
-use openzeppelin_utils::serde::SerializedAppend;
-use snforge_std::{
-    start_cheat_caller_address, stop_cheat_caller_address, start_cheat_max_fee_global,
+use cartridge_vrf::mocks::vrf_consumer_mock::IVrfConsumerMockDispatcher;
+use cartridge_vrf::vrf_provider::vrf_provider_component::{
+    IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey,
 };
-use starknet::{ContractAddress, contract_address_const};
+use openzeppelin::utils::serde::SerializedAppend;
+use openzeppelin_testing as utils;
+use openzeppelin_testing::constants::AsAddressImpl;
+use snforge_std::{
+    start_cheat_caller_address, start_cheat_max_fee_global, stop_cheat_caller_address,
+};
 use stark_vrf::ecvrf::Proof;
+use starknet::ContractAddress;
 use utils::constants::{AUTHORIZED, OWNER};
 
-use cartridge_vrf::vrf_provider::vrf_provider::VrfProvider;
-use cartridge_vrf::vrf_provider::vrf_provider_component::{
-    IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey,
-};
 
-use cartridge_vrf::mocks::vrf_consumer_mock::{
-    VrfConsumer, IVrfConsumerMock, IVrfConsumerMockDispatcher, IVrfConsumerMockDispatcherTrait,
-};
-
-pub fn PROVIDER() -> ContractAddress {
-    contract_address_const::<'PROVIDER'>()
-}
-
-pub fn CONSUMER1() -> ContractAddress {
-    contract_address_const::<'CONSUMER1'>()
-}
-
-pub fn CONSUMER2() -> ContractAddress {
-    contract_address_const::<'CONSUMER2'>()
-}
-
-pub fn PLAYER1() -> ContractAddress {
-    contract_address_const::<'PLAYER1'>()
-}
+pub const PROVIDER: ContractAddress = 'PROVIDER'.as_address();
+pub const CONSUMER1: ContractAddress = 'CONSUMER1'.as_address();
+pub const CONSUMER2: ContractAddress = 'CONSUMER2'.as_address();
+pub const PLAYER1: ContractAddress = 'PLAYER1'.as_address();
 
 #[derive(Drop, Copy, Clone)]
 pub struct SetupResult {
-    provider: IVrfProviderDispatcher,
-    consumer1: IVrfConsumerMockDispatcher,
-    consumer2: IVrfConsumerMockDispatcher,
+    pub provider: IVrfProviderDispatcher,
+    pub consumer1: IVrfConsumerMockDispatcher,
+    pub consumer2: IVrfConsumerMockDispatcher,
 }
 
 // lauch vrf-server : cargo run -r -- -s 420
@@ -45,7 +31,7 @@ pub struct SetupResult {
 
 pub fn setup() -> SetupResult {
     let mut provider_calldata = array![];
-    provider_calldata.append_serde(OWNER());
+    provider_calldata.append_serde(OWNER);
     provider_calldata
         .append_serde(
             PublicKey {
@@ -54,25 +40,25 @@ pub fn setup() -> SetupResult {
             },
         );
 
-    utils::declare_and_deploy_at("VrfProvider", PROVIDER(), provider_calldata);
+    utils::declare_and_deploy_at("VrfProvider", PROVIDER, provider_calldata);
 
     let mut consumer_calldata = array![];
-    consumer_calldata.append_serde(PROVIDER());
+    consumer_calldata.append_serde(PROVIDER);
 
-    utils::declare_and_deploy_at("VrfConsumer", CONSUMER1(), consumer_calldata.clone());
-    utils::deploy_another_at(CONSUMER1(), CONSUMER2(), consumer_calldata);
+    utils::declare_and_deploy_at("VrfConsumer", CONSUMER1, consumer_calldata.clone());
+    utils::deploy_another_at(CONSUMER1, CONSUMER2, consumer_calldata);
 
     start_cheat_max_fee_global(10000000000000000);
 
     SetupResult {
-        provider: IVrfProviderDispatcher { contract_address: PROVIDER() },
-        consumer1: IVrfConsumerMockDispatcher { contract_address: CONSUMER1() },
-        consumer2: IVrfConsumerMockDispatcher { contract_address: CONSUMER2() },
+        provider: IVrfProviderDispatcher { contract_address: PROVIDER },
+        consumer1: IVrfConsumerMockDispatcher { contract_address: CONSUMER1 },
+        consumer2: IVrfConsumerMockDispatcher { contract_address: CONSUMER2 },
     }
 }
 
 pub fn submit_random(provider: IVrfProviderDispatcher, seed: felt252, proof: Proof) {
-    start_cheat_caller_address(provider.contract_address, AUTHORIZED());
+    start_cheat_caller_address(provider.contract_address, AUTHORIZED);
     provider.submit_random(seed, proof);
     stop_cheat_caller_address(provider.contract_address);
 }

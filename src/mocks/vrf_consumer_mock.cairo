@@ -1,5 +1,5 @@
 #[starknet::interface]
-trait IVrfConsumerMock<TContractState> {
+pub trait IVrfConsumerMock<TContractState> {
     fn dice(ref self: TContractState) -> u8;
     fn dice_with_salt(ref self: TContractState) -> u8;
 
@@ -11,17 +11,11 @@ trait IVrfConsumerMock<TContractState> {
 
 
 #[starknet::contract]
-mod VrfConsumer {
-    use starknet::{ClassHash, ContractAddress, get_caller_address, get_contract_address};
-    use starknet::storage::Map;
-
-    use openzeppelin_upgrades::UpgradeableComponent;
-    use openzeppelin_upgrades::interface::IUpgradeable;
-
-    use stark_vrf::ecvrf::{Point, Proof, ECVRF, ECVRFImpl};
-
-    use cartridge_vrf::vrf_consumer::vrf_consumer_component::{VrfConsumerComponent};
+pub mod VrfConsumer {
     use cartridge_vrf::Source;
+    use cartridge_vrf::vrf_consumer::vrf_consumer_component::VrfConsumerComponent;
+    use stark_vrf::ecvrf::ECVRFImpl;
+    use starknet::{ContractAddress, get_caller_address};
 
     component!(path: VrfConsumerComponent, storage: vrf_consumer, event: VrfConsumerEvent);
 
@@ -31,14 +25,14 @@ mod VrfConsumer {
     impl VrfConsumerInternalImpl = VrfConsumerComponent::InternalImpl<ContractState>;
 
     #[storage]
-    struct Storage {
+    pub struct Storage {
         #[substorage(v0)]
         vrf_consumer: VrfConsumerComponent::Storage,
     }
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         #[flat]
         VrfConsumerEvent: VrfConsumerComponent::Event,
     }

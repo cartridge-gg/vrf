@@ -10,11 +10,11 @@ pub mod vrf_consumer {
 pub mod mocks {
     pub mod vrf_consumer_mock;
 }
+pub use vrf_consumer::vrf_consumer_component::VrfConsumerComponent;
 
 pub use vrf_provider::vrf_provider_component::{
     IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source,
 };
-pub use vrf_consumer::vrf_consumer_component::VrfConsumerComponent;
 
 #[cfg(test)]
 pub mod tests {

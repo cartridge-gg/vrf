@@ -3,13 +3,12 @@
 
 #[starknet::contract]
 mod VrfProvider {
-    use starknet::{ContractAddress, ClassHash};
-    use openzeppelin_access::ownable::OwnableComponent;
-    use openzeppelin_upgrades::UpgradeableComponent;
-    use openzeppelin_upgrades::interface::IUpgradeable;
-
-    use cartridge_vrf::vrf_provider::vrf_provider_component::VrfProviderComponent;
     use cartridge_vrf::PublicKey;
+    use cartridge_vrf::vrf_provider::vrf_provider_component::VrfProviderComponent;
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::upgrades::UpgradeableComponent;
+    use openzeppelin::upgrades::interface::IUpgradeable;
+    use starknet::{ClassHash, ContractAddress};
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
