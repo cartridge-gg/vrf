@@ -8,7 +8,8 @@ pub trait IVrfProvider<TContractState> {
     fn consume_random(ref self: TContractState, source: Source) -> felt252;
     fn assert_consumed(ref self: TContractState, seed: felt252);
 
-    fn get_consume_count(self: @TContractState, source: Source) -> u32;
+    fn get_consume_count(self: @TContractState) -> u32;
+    fn is_vrf_call(self: @TContractState) -> bool;
 
     fn get_public_key(self: @TContractState) -> PublicKey;
     fn set_public_key(ref self: TContractState, new_pubkey: PublicKey);
@@ -52,7 +53,7 @@ pub mod VrfProviderComponent {
         // seed -> random
         VrfProvider_random: Map<felt252, felt252>,
         // seed -> consume_random call count
-        VrfProvider_consume_count: u32,
+        VrfProvider_consume_count: Option<u32>,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -101,6 +102,7 @@ pub mod VrfProviderComponent {
                 .expect(Errors::INVALID_PROOF);
 
             self.VrfProvider_random.write(seed, random);
+            self.VrfProvider_consume_count.write(Option::Some(0));
 
             self.emit(SubmitRandom { seed, proof });
         }
@@ -109,6 +111,7 @@ pub mod VrfProviderComponent {
             let tx_info = starknet::get_execution_info().tx_info.unbox();
 
             let seed = self.get_seed(source, tx_info);
+            let consume_count = self.get_consume_count();
 
             // Always return 0 during fee estimation to avoid leaking vrf info.
             if tx_info.max_fee == 0
@@ -116,8 +119,7 @@ pub mod VrfProviderComponent {
                 && *tx_info.resource_bounds.at(1).max_amount == 0
                 && *tx_info.resource_bounds.at(2).max_amount == 0 {
                 // simulate called
-                let consume_count = self.VrfProvider_consume_count.read();
-                self.VrfProvider_consume_count.write(consume_count + 1);
+                self.VrfProvider_consume_count.write(Option::Some(consume_count + 1));
 
                 return 0;
             }
@@ -125,22 +127,27 @@ pub mod VrfProviderComponent {
             let random = self.VrfProvider_random.read(seed);
             assert(random != 0, Errors::NOT_FULFILLED);
 
-            let consume_count = self.VrfProvider_consume_count.read();
-            self.VrfProvider_consume_count.write(consume_count + 1);
+            self.VrfProvider_consume_count.write(Option::Some(consume_count + 1));
 
             poseidon_hash_span(array![random, consume_count.into()].span())
         }
 
-        fn get_consume_count(self: @ComponentState<TContractState>, source: Source) -> u32 {
-            self.VrfProvider_consume_count.read()
+        fn get_consume_count(self: @ComponentState<TContractState>) -> u32 {
+            let count = self.VrfProvider_consume_count.read();
+            count.unwrap_or(0)
         }
 
+        fn is_vrf_call(self: @ComponentState<TContractState>) -> bool {
+            self.VrfProvider_consume_count.read().is_some()
+        }
+
+
         fn assert_consumed(ref self: ComponentState<TContractState>, seed: felt252) {
-            let consume_count = self.VrfProvider_consume_count.read();
+            let consume_count = self.get_consume_count();
             assert(consume_count > 0, Errors::NOT_CONSUMED);
 
             self.VrfProvider_random.write(seed, 0);
-            self.VrfProvider_consume_count.write(0);
+            self.VrfProvider_consume_count.write(Option::None);
         }
 
         fn get_public_key(self: @ComponentState<TContractState>) -> PublicKey {
