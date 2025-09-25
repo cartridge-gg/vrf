@@ -50,6 +50,8 @@ pub mod VrfProviderComponent {
     #[storage]
     pub struct Storage {
         VrfProvider_pubkey: PublicKey,
+        // wallet -> nonce
+        VrfProvider_nonces: Map<ContractAddress, felt252>,
         // seed -> random
         VrfProvider_random: Map<felt252, felt252>,
         // seed -> consume_random call count
@@ -141,7 +143,6 @@ pub mod VrfProviderComponent {
             self.VrfProvider_consume_count.read().is_some()
         }
 
-
         fn assert_consumed(ref self: ComponentState<TContractState>, seed: felt252) {
             let consume_count = self.get_consume_count();
             assert(consume_count > 0, Errors::NOT_CONSUMED);
@@ -178,18 +179,16 @@ pub mod VrfProviderComponent {
         }
 
         fn get_seed(
-            self: @ComponentState<TContractState>, source: Source, tx_info: TxInfo,
+            ref self: ComponentState<TContractState>, source: Source, tx_info: TxInfo,
         ) -> felt252 {
             let caller = get_caller_address();
 
             match source {
                 Source::Nonce(addr) => {
+                    let nonce = self.VrfProvider_nonces.read(addr);
+                    self.VrfProvider_nonces.write(addr, nonce + 1);
                     poseidon_hash_span(
-                        array![
-                            tx_info.nonce, tx_info.account_contract_address.into(), addr.into(),
-                            caller.into(), tx_info.chain_id,
-                        ]
-                            .span(),
+                        array![nonce, addr.into(), caller.into(), tx_info.chain_id].span(),
                     )
                 },
                 Source::Salt(salt) => {

@@ -53,7 +53,7 @@ fn test_dice() {
     // PLAYER1 call dice, CONSUMER1 is caller of consume_random
     start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1);
     let dice1 = setup.consumer1.dice();
-    assert(dice1 == 3, 'dice1 should be 3');
+    assert(dice1 == 4, 'dice1 should be 4');
     stop_cheat_caller_address(setup.consumer1.contract_address);
 
     setup.provider.assert_consumed(SEED);
