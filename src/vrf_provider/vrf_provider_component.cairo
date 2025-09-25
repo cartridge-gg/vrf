@@ -135,8 +135,7 @@ pub mod VrfProviderComponent {
         }
 
         fn get_consume_count(self: @ComponentState<TContractState>) -> u32 {
-            let count = self.VrfProvider_consume_count.read();
-            count.unwrap_or(0)
+            self._get_consume_count()
         }
 
         fn is_vrf_call(self: @ComponentState<TContractState>) -> bool {
@@ -178,6 +177,11 @@ pub mod VrfProviderComponent {
             self.emit(PublicKeyChanged { pubkey: new_pubkey })
         }
 
+        fn _get_consume_count(self: @ComponentState<TContractState>) -> u32 {
+            let count = self.VrfProvider_consume_count.read();
+            count.unwrap_or(0)
+        }
+
         fn get_seed(
             ref self: ComponentState<TContractState>, source: Source, tx_info: TxInfo,
         ) -> felt252 {
@@ -185,8 +189,18 @@ pub mod VrfProviderComponent {
 
             match source {
                 Source::Nonce(addr) => {
-                    let nonce = self.VrfProvider_nonces.read(addr);
-                    self.VrfProvider_nonces.write(addr, nonce + 1);
+                    let consume_count = self._get_consume_count();
+                    // let nonce = self.VrfProvider_nonces.read(addr);
+                    let nonce = if consume_count == 0 {
+                        // only increment nonce on first consume_random
+                        let nonce = self.VrfProvider_nonces.read(addr);
+                        self.VrfProvider_nonces.write(addr, nonce + 1);
+                        nonce
+                    } else {
+                        // return the nonce pre-incrementation
+                        let nonce = self.VrfProvider_nonces.read(addr);
+                        nonce - 1
+                    };
                     poseidon_hash_span(
                         array![nonce, addr.into(), caller.into(), tx_info.chain_id].span(),
                     )
