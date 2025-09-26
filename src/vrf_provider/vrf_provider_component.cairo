@@ -8,6 +8,9 @@ pub trait IVrfProvider<TContractState> {
     fn consume_random(ref self: TContractState, source: Source) -> felt252;
     fn assert_consumed(ref self: TContractState, seed: felt252);
 
+    fn get_consume_count(self: @TContractState) -> u32;
+    fn is_vrf_call(self: @TContractState) -> bool;
+
     fn get_public_key(self: @TContractState) -> PublicKey;
     fn set_public_key(ref self: TContractState, new_pubkey: PublicKey);
 }
@@ -41,7 +44,7 @@ pub mod VrfProviderComponent {
         Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
         StoragePointerWriteAccess,
     };
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, TxInfo, get_caller_address};
     use super::{PublicKey, Source};
 
     #[storage]
@@ -51,6 +54,8 @@ pub mod VrfProviderComponent {
         VrfProvider_nonces: Map<ContractAddress, felt252>,
         // seed -> random
         VrfProvider_random: Map<felt252, felt252>,
+        // seed -> consume_random call count
+        VrfProvider_consume_count: Option<u32>,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -95,51 +100,54 @@ pub mod VrfProviderComponent {
             let ecvrf = ECVRFImpl::new(pubkey);
 
             let random = ecvrf
-                .verify(proof.clone(), array![seed.clone()].span())
+                .verify(proof.clone(), array![seed].span())
                 .expect(Errors::INVALID_PROOF);
 
             self.VrfProvider_random.write(seed, random);
+            self.VrfProvider_consume_count.write(Option::Some(0));
 
             self.emit(SubmitRandom { seed, proof });
         }
 
         fn consume_random(ref self: ComponentState<TContractState>, source: Source) -> felt252 {
-            let caller = get_caller_address();
             let tx_info = starknet::get_execution_info().tx_info.unbox();
 
-            let seed = match source {
-                Source::Nonce(addr) => {
-                    let nonce = self.VrfProvider_nonces.read(addr);
-                    self.VrfProvider_nonces.write(addr, nonce + 1);
-                    poseidon_hash_span(
-                        array![nonce, addr.into(), caller.into(), tx_info.chain_id].span(),
-                    )
-                },
-                Source::Salt(salt) => {
-                    poseidon_hash_span(array![salt, caller.into(), tx_info.chain_id].span())
-                },
-            };
+            let seed = self.get_seed(source, tx_info);
+            let consume_count = self.get_consume_count();
 
             // Always return 0 during fee estimation to avoid leaking vrf info.
             if tx_info.max_fee == 0
                 && *tx_info.resource_bounds.at(0).max_amount == 0
-                && *tx_info.resource_bounds.at(1).max_amount == 0 {
-                // simulate consumed
-                self.VrfProvider_random.write(seed, 0);
+                && *tx_info.resource_bounds.at(1).max_amount == 0
+                && *tx_info.resource_bounds.at(2).max_amount == 0 {
+                // simulate called
+                self.VrfProvider_consume_count.write(Option::Some(consume_count + 1));
+
                 return 0;
             }
 
             let random = self.VrfProvider_random.read(seed);
             assert(random != 0, Errors::NOT_FULFILLED);
 
-            self.VrfProvider_random.write(seed, 0);
+            self.VrfProvider_consume_count.write(Option::Some(consume_count + 1));
 
-            random
+            poseidon_hash_span(array![random, consume_count.into()].span())
+        }
+
+        fn get_consume_count(self: @ComponentState<TContractState>) -> u32 {
+            self._get_consume_count()
+        }
+
+        fn is_vrf_call(self: @ComponentState<TContractState>) -> bool {
+            self.VrfProvider_consume_count.read().is_some()
         }
 
         fn assert_consumed(ref self: ComponentState<TContractState>, seed: felt252) {
-            let random = self.VrfProvider_random.read(seed);
-            assert(random == 0, Errors::NOT_CONSUMED);
+            let consume_count = self.get_consume_count();
+            assert(consume_count > 0, Errors::NOT_CONSUMED);
+
+            self.VrfProvider_random.write(seed, 0);
+            self.VrfProvider_consume_count.write(Option::None);
         }
 
         fn get_public_key(self: @ComponentState<TContractState>) -> PublicKey {
@@ -167,6 +175,40 @@ pub mod VrfProviderComponent {
             self.VrfProvider_pubkey.write(new_pubkey);
 
             self.emit(PublicKeyChanged { pubkey: new_pubkey })
+        }
+
+        fn _get_consume_count(self: @ComponentState<TContractState>) -> u32 {
+            let count = self.VrfProvider_consume_count.read();
+            count.unwrap_or(0)
+        }
+
+        fn get_seed(
+            ref self: ComponentState<TContractState>, source: Source, tx_info: TxInfo,
+        ) -> felt252 {
+            let caller = get_caller_address();
+
+            match source {
+                Source::Nonce(addr) => {
+                    let consume_count = self._get_consume_count();
+                    // let nonce = self.VrfProvider_nonces.read(addr);
+                    let nonce = if consume_count == 0 {
+                        // only increment nonce on first consume_random
+                        let nonce = self.VrfProvider_nonces.read(addr);
+                        self.VrfProvider_nonces.write(addr, nonce + 1);
+                        nonce
+                    } else {
+                        // return the nonce pre-incrementation
+                        let nonce = self.VrfProvider_nonces.read(addr);
+                        nonce - 1
+                    };
+                    poseidon_hash_span(
+                        array![nonce, addr.into(), caller.into(), tx_info.chain_id].span(),
+                    )
+                },
+                Source::Salt(salt) => {
+                    poseidon_hash_span(array![salt, caller.into(), tx_info.chain_id].span())
+                },
+            }
         }
     }
 }

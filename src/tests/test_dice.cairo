@@ -50,13 +50,36 @@ fn test_dice() {
 
     submit_random(setup.provider, SEED, proof());
 
+    let is_vrf_call = setup.provider.is_vrf_call();
+    assert(is_vrf_call, 'is_vrf_call0 should be true');
+
+    let consume_count = setup.provider.get_consume_count();
+    assert(consume_count == 0, 'consume_count should be 0');
+
     // PLAYER1 call dice, CONSUMER1 is caller of consume_random
     start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1);
+
     let dice1 = setup.consumer1.dice();
-    assert(dice1 == 3, 'dice1 should be 3');
+    assert(dice1 == 4, 'dice1 should be 4');
+
+    let consume_count = setup.provider.get_consume_count();
+    assert(consume_count == 1, 'consume_count should be 1');
+
+    let dice2 = setup.consumer1.dice();
+    assert(dice2 == 3, 'dice2 should be 3');
+
+    let consume_count = setup.provider.get_consume_count();
+    assert(consume_count == 2, 'consume_count should be 2');
+
     stop_cheat_caller_address(setup.consumer1.contract_address);
 
+    let is_vrf_call = setup.provider.is_vrf_call();
+    assert(is_vrf_call, 'is_vrf_call1 should be true');
+
     setup.provider.assert_consumed(SEED);
+
+    let is_vrf_call = setup.provider.is_vrf_call();
+    assert(!is_vrf_call, 'is_vrf_call2 should be false');
 }
 
 #[test]
@@ -75,25 +98,6 @@ fn test_not_consuming__must_consume() {
 
     stop_cheat_caller_address(setup.consumer1.contract_address);
     setup.provider.assert_consumed(SEED);
-}
-
-#[test]
-#[should_panic(expected: 'VrfProvider: not fulfilled')]
-fn test_dice__cannot_consume_twice() {
-    let setup = setup();
-
-    // noop just here for example
-    setup.provider.request_random(CONSUMER1, Source::Nonce(PLAYER1));
-
-    // provider submit_random
-    submit_random(setup.provider, SEED, proof());
-
-    // PLAYER1 consume twice
-    start_cheat_caller_address(setup.consumer1.contract_address, PLAYER1);
-    start_cheat_caller_address(setup.consumer2.contract_address, PLAYER1);
-
-    let _dice1 = setup.consumer1.dice();
-    let _dice2 = setup.consumer1.dice();
 }
 
 #[test]
