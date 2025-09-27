@@ -2,7 +2,7 @@
 // Compatible with OpenZeppelin Contracts for Cairo ^0.16.0
 
 #[starknet::contract]
-mod VrfProvider {
+pub mod VrfProvider {
     use cartridge_vrf::PublicKey;
     use cartridge_vrf::vrf_provider::vrf_provider_component::VrfProviderComponent;
     use openzeppelin::access::ownable::OwnableComponent;
@@ -25,7 +25,7 @@ mod VrfProvider {
     impl VrfProviderInternalImpl = VrfProviderComponent::InternalImpl<ContractState>;
 
     #[storage]
-    struct Storage {
+    pub struct Storage {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
@@ -36,7 +36,7 @@ mod VrfProvider {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
