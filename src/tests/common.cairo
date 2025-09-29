@@ -3,14 +3,13 @@ use cartridge_vrf::vrf_provider::vrf_provider_component::{
     IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey,
 };
 use openzeppelin::utils::serde::SerializedAppend;
-use openzeppelin_testing as utils;
-use openzeppelin_testing::constants::AsAddressImpl;
+use openzeppelin_testing::constants::{AUTHORIZED, AsAddressImpl, OWNER};
+use openzeppelin_testing::deployment::{declare_and_deploy_at, deploy_another_at};
 use snforge_std::{
     start_cheat_caller_address, start_cheat_max_fee_global, stop_cheat_caller_address,
 };
 use stark_vrf::ecvrf::Proof;
 use starknet::ContractAddress;
-use utils::constants::{AUTHORIZED, OWNER};
 
 
 pub const PROVIDER: ContractAddress = 'PROVIDER'.as_address();
@@ -40,13 +39,13 @@ pub fn setup() -> SetupResult {
             },
         );
 
-    utils::declare_and_deploy_at("VrfProvider", PROVIDER, provider_calldata);
+    declare_and_deploy_at("VrfProvider", PROVIDER, provider_calldata);
 
     let mut consumer_calldata = array![];
     consumer_calldata.append_serde(PROVIDER);
 
-    utils::declare_and_deploy_at("VrfConsumer", CONSUMER1, consumer_calldata.clone());
-    utils::deploy_another_at(CONSUMER1, CONSUMER2, consumer_calldata);
+    declare_and_deploy_at("VrfConsumer", CONSUMER1, consumer_calldata.clone());
+    deploy_another_at(CONSUMER1, CONSUMER2, consumer_calldata);
 
     start_cheat_max_fee_global(10000000000000000);
 

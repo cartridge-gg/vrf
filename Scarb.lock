@@ -107,9 +107,9 @@ checksum = "sha256:902932ec296c2f400e0ac7c579edeaafd6067b6ce6d9854c1191de28e396f
 
 [[package]]
 name = "openzeppelin_testing"
-version = "4.6.0"
+version = "4.7.0"
 source = "registry+https://scarbs.xyz/"
-checksum = "sha256:953fa4e00f25f3f05df884f0a97dfaa66419472b079372abd82a671440219daa"
+checksum = "sha256:3ee1e2bdfb6e01e638a5d96c820dfbc92c433271c39a8ed26ad9e96ff80fef90"
 dependencies = [
  "snforge_std",
 ]
@@ -140,20 +140,21 @@ checksum = "sha256:bf799c794139837f397975ffdf6a7ed5032d198bbf70e87a8f44f144a9dfc
 
 [[package]]
 name = "snforge_scarb_plugin"
-version = "0.48.1"
+version = "0.49.0"
 source = "registry+https://scarbs.xyz/"
-checksum = "sha256:2dd27e8215eea8785b3930e9f452e11b429ca262b1c1fbb071bfc173b9ebc125"
+checksum = "sha256:903150f0e9542e4277d417029eea4c03af0db398b581f9f7ae3ebbdac9afc657"
 
 [[package]]
 name = "snforge_std"
-version = "0.48.1"
+version = "0.49.0"
 source = "registry+https://scarbs.xyz/"
-checksum = "sha256:89f759fa685d48ed0ba7152d2ac2eb168da08dfa8b84b2bee96e203dc5b2413e"
+checksum = "sha256:73d73653cc4356ec51b92a6bec9d8385b20318170c2f2ade7891e5185a0e7e64"
 dependencies = [
  "snforge_scarb_plugin",
 ]
 
 [[package]]
 name = "stark_vrf"
-version = "0.1.0"
-source = "git+https://github.com/dojoengine/stark-vrf.git#96d6d2a88b1ef46c4a285d0ccc334237205edae3"
+version = "0.1.1"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:5345a2ec33f50f7e372b74179b0421da022775b72b9de3c51cb15b7530482475"

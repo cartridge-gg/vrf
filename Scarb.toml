@@ -5,17 +5,19 @@ edition = "2024_07"
 
 [dependencies]
 starknet = "^2.12.1"
-stark_vrf = { git = "https://github.com/dojoengine/stark-vrf.git" }
+stark_vrf = "0.1.1"
 openzeppelin = "2.0.0"
-snforge_std = "0.48.1"
 
 [dev-dependencies]
-openzeppelin_testing = "=4.6.0"
+openzeppelin_testing = "4.7.0"
+snforge_std = "0.49.0"
 
 [[target.starknet-contract]]
-allowed-libfuncs-list.name = "experimental"
 
 [lib]
 
 [scripts]
 test = "snforge test"
+
+[tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]
