@@ -5,7 +5,7 @@ edition = "2024_07"
 
 [dependencies]
 starknet = "^2.12.1"
-stark_vrf = { git = "https://github.com/dojoengine/stark-vrf.git" }
+stark_vrf = "0.1.1"
 openzeppelin = "2.0.0"
 
 [dev-dependencies]
