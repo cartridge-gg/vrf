@@ -2,6 +2,13 @@
 name = "cartridge_vrf"
 version = "0.1.0"
 edition = "2024_07"
+license = "MIT"
+description = "Cartridge Verfiable Random Function (VRF) designed to provide cheap, atomic verfiable randomness for fully onchain games."
+homepage = "https://github.com/cartridge-gg/vrf"
+repository = "https://github.com/cartridge-gg/vrf"
+documentation = "https://github.com/cartridge-gg/vrf"
+readme = "README.md"
+keywords = ["cartridge", "starknet", "vrf"]
 
 [dependencies]
 starknet = "^2.12.1"
