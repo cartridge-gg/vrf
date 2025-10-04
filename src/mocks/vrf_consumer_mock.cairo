@@ -1,5 +1,6 @@
 #[starknet::interface]
 pub trait IVrfConsumerMock<TContractState> {
+    fn hello(ref self: TContractState) -> felt252;
     fn dice(ref self: TContractState) -> u8;
     fn dice_with_salt(ref self: TContractState) -> u8;
 
@@ -44,11 +45,15 @@ pub mod VrfConsumer {
 
     #[abi(embed_v0)]
     impl ConsumerImpl of super::IVrfConsumerMock<ContractState> {
-        // throw dice
+        fn hello(ref self: ContractState) -> felt252 {
+            'HELLO'
+        }
+
         fn dice(ref self: ContractState) -> u8 {
             let player_id = get_caller_address();
             let random: u256 = self.vrf_consumer.consume_random(Source::Nonce(player_id)).into();
 
+            println!("random: {}", random);
             ((random % 6) + 1).try_into().unwrap()
         }
 
