@@ -174,9 +174,20 @@ pub mod VrfAccountComponent {
         ) { // noop
         }
 
-        fn submit_random(
-            ref self: ComponentState<TContractState>, seed: felt252, proof: Proof,
-        ) { // noop
+        fn submit_random(ref self: ComponentState<TContractState>, seed: felt252, proof: Proof) {
+            let pubkey: Point = self.get_vrf_public_key().into();
+            let ecvrf = ECVRFImpl::new(pubkey);
+
+            let random = ecvrf
+                .verify(proof.clone(), array![seed].span())
+                .expect(VrfErrors::INVALID_PROOF);
+
+            println!("_submit_random::random : 0x{:x}", random);
+
+            self.VrfProvider_random.write(seed, random);
+            self.VrfProvider_consume_count.write(Option::Some(0));
+
+            self.emit(SubmitRandom { seed, proof });
         }
 
         fn consume_random(ref self: ComponentState<TContractState>, source: Source) -> felt252 {
@@ -243,23 +254,6 @@ pub mod VrfAccountComponent {
         impl SRC5: SRC5Component::HasComponent<TContractState>,
         +Drop<TContractState>,
     > of VrfInternalTrait<TContractState> {
-        fn _submit_random(ref self: ComponentState<TContractState>, seed: felt252, proof: Proof) {
-            let pubkey: Point = self.get_vrf_public_key().into();
-            let ecvrf = ECVRFImpl::new(pubkey);
-
-            let random = ecvrf
-                .verify(proof.clone(), array![seed].span())
-                .expect(VrfErrors::INVALID_PROOF);
-            // this give "Option::unwrap failed" error for wrong proof
-
-            println!("_submit_random::random : 0x{:x}", random);
-
-            self.VrfProvider_random.write(seed, random);
-            self.VrfProvider_consume_count.write(Option::Some(0));
-
-            self.emit(SubmitRandom { seed, proof });
-        }
-
         fn _assert_consumed(ref self: ComponentState<TContractState>, seed: felt252) {
             let consume_count = self._get_consume_count();
             assert(consume_count > 0, VrfErrors::NOT_CONSUMED);
@@ -334,11 +328,10 @@ pub mod VrfAccountComponent {
 
             let mut should_assert_consumed_seed = Option::None;
             for call in calls.span() {
-                if !self._is_submit_random_call(call) {
-                    execute_single_call(call);
-                } else {
+                if self._is_submit_random_call(call) {
                     should_assert_consumed_seed = Option::Some(call.calldata.at(0));
                 }
+                execute_single_call(call);
             }
 
             if should_assert_consumed_seed.is_some() {
@@ -354,27 +347,7 @@ pub mod VrfAccountComponent {
         /// This function is used by the protocol to verify `invoke` transactions.
         fn __validate__(ref self: ComponentState<TContractState>, calls: Array<Call>) -> felt252 {
             println!("__validate__");
-            let validation_status =  self.validate_transaction();
-
-            if validation_status != starknet::VALIDATED {
-                return validation_status;
-            }
-
-            for call in calls {
-                if self._is_submit_random_call(@call) {
-                    println!("__validate__::SUBMIT_RANDOM");
-                    let mut calldata = call.calldata;
-
-                    let seed = Serde::<felt252>::deserialize(ref calldata)
-                        .expect('fail deser seed');
-                    let proof = Serde::<Proof>::deserialize(ref calldata)
-                        .expect('fail deser proof');
-
-                    self._submit_random(seed, proof);
-                }
-            }
-
-           validation_status
+            self.validate_transaction()
         }
 
 
