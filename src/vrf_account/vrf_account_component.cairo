@@ -182,8 +182,6 @@ pub mod VrfAccountComponent {
                 .verify(proof.clone(), array![seed].span())
                 .expect(VrfErrors::INVALID_PROOF);
 
-            println!("_submit_random::random : 0x{:x}", random);
-
             self.VrfProvider_random.write(seed, random);
             self.VrfProvider_consume_count.write(Option::Some(0));
 
@@ -195,8 +193,6 @@ pub mod VrfAccountComponent {
 
             let seed = self._get_seed(source);
             let consume_count = self.get_consume_count();
-
-            println!("seed: 0x{:x}", seed);
 
             // Always return 0 during fee estimation to avoid leaking vrf info.
             if tx_info.max_fee == 0
@@ -336,9 +332,6 @@ pub mod VrfAccountComponent {
 
             if should_assert_consumed_seed.is_some() {
                 let seed = *should_assert_consumed_seed.unwrap();
-                let consume_count = self.get_consume_count();
-                println!("__execute__::should_assert_consumed_seed 0x{:x}", seed);
-                println!("__execute__::consume_count {}", consume_count);
                 self._assert_consumed(seed);
             }
         }
@@ -346,7 +339,6 @@ pub mod VrfAccountComponent {
         /// Verifies the validity of the signature for the current transaction.
         /// This function is used by the protocol to verify `invoke` transactions.
         fn __validate__(ref self: ComponentState<TContractState>, calls: Array<Call>) -> felt252 {
-            println!("__validate__");
             self.validate_transaction()
         }
 

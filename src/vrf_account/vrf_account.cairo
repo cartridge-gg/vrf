@@ -20,7 +20,7 @@ mod VrfAccount {
     impl AccountMixinImpl = VrfAccountComponent::AccountMixinImpl<ContractState>;
     #[abi(embed_v0)]
     impl VrfAccountImpl = VrfAccountComponent::VrfAccountImpl<ContractState>;
-    
+
     #[abi(embed_v0)]
     impl OutsideExecutionV2Impl =
         SRC9Component::OutsideExecutionV2Impl<ContractState>;
