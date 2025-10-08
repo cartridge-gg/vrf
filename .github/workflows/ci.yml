@@ -3,7 +3,6 @@ on: push
 env:
   CARGO_TERM_COLOR: always
   SCARB_VERSION: 2.12.1
-  RUST_VERSION: 1.88.0
 jobs:
   fmt:
     runs-on: ubuntu-latest

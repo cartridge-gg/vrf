@@ -3,6 +3,14 @@ pub mod routes;
 pub mod state;
 pub mod utils;
 
+#[cfg(test)]
+pub mod tests {
+    #[cfg(test)]
+    pub mod test_setup;
+    #[cfg(test)]
+    pub mod tests;
+}
+
 use std::sync::{Arc, RwLock};
 
 use axum::{
@@ -38,9 +46,40 @@ pub struct Args {
     rpc_url: String,
 }
 
+impl Default for Args {
+    fn default() -> Self {
+        Args {
+            account_address: "0x123".into(),
+            account_private_key: "0x420".into(),
+            secret_key: 420,
+            rpc_url: "http://localhost:5050".into(),
+        }
+    }
+}
+
+#[allow(dead_code)]
+impl Args {
+    fn with_account_address(mut self, account_address: &str) -> Args {
+        self.account_address = account_address.into();
+        self
+    }
+    fn with_account_private_key(mut self, account_private_key: &str) -> Args {
+        self.account_private_key = account_private_key.into();
+        self
+    }
+    fn with_secret_key(mut self, secret_key: u64) -> Args {
+        self.secret_key = secret_key;
+        self
+    }
+    fn with_rpc_url(mut self, rpc_url: &str) -> Args {
+        self.rpc_url = rpc_url.into();
+        self
+    }
+}
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    let app_state = AppState::from_args().await;
+    let app_state = AppState::new().await;
     let shared_state = Arc::new(RwLock::new(app_state));
 
     tracing_subscriber::fmt()

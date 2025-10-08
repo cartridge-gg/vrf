@@ -26,9 +26,12 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn from_args() -> AppState {
+    pub async fn new() -> AppState {
         let args = Args::parse();
+        AppState::from_args(&args).await
+    }
 
+    pub async fn from_args(args: &Args) -> AppState {
         let secret_key = args.secret_key.to_string();
         let public_key = generate_public_key(secret_key.parse().unwrap());
 
@@ -38,7 +41,9 @@ impl AppState {
             Felt::from_hex(&args.account_private_key).unwrap(),
         ));
 
-        let provider = JsonRpcClient::new(HttpTransport::new(Url::parse(&args.rpc_url).unwrap()));
+        let provider = JsonRpcClient::new(HttpTransport::new(
+            Url::parse(&args.rpc_url).expect("invalid rpc_url"),
+        ));
         let chain_id = provider.chain_id().await.expect("unable to get chain_id");
 
         AppState {
