@@ -117,7 +117,7 @@ pub async fn declare_and_deploy(
 }
 
 #[tokio::test(flavor = "multi_thread")]
-#[katana_runner::test(accounts = 10)]
+#[katana_runner::test(accounts = 10, chain_id = Felt::from_hex_unchecked("0x57505f4b4154414e41"))] // WP_KATANA
 async fn test_outside_execution(sequencer: &RunnerCtx) {
     let chain_id = sequencer.provider().chain_id().await.unwrap();
     let account = sequencer.account(0);
@@ -183,9 +183,6 @@ async fn test_outside_execution(sequencer: &RunnerCtx) {
         vec![vrf_account_address.0],
     )
     .await;
-
-    // | Private key     |  0x1c9053c053edf324aec366a34c6901b1095b07af69495bffec7d7fe21effb1b
-    // | Public key      |  0x4c339f18b9d1b95b64a6d378abd1480b2e0d5d5bd33cd0828cbce4d65c27284
 
     // MUST USE ACCOUNT SUPPORTING OUTSIDE_EXECUTION
     let (user_account_address, _) = declare_and_deploy(
@@ -268,7 +265,7 @@ async fn test_outside_execution(sequencer: &RunnerCtx) {
 
     let executor_account = sequencer.account(2);
 
-    let dice_value = sequencer
+    let _dice_value = sequencer
         .provider()
         .call(
             FunctionCall {
@@ -288,7 +285,7 @@ async fn test_outside_execution(sequencer: &RunnerCtx) {
         .await
         .unwrap();
 
-    let execute_receipt =
+    let _execute_receipt =
         TransactionWaiter::new(execute_result.transaction_hash, sequencer.provider())
             .await
             .unwrap();
@@ -307,7 +304,7 @@ async fn test_outside_execution(sequencer: &RunnerCtx) {
         )
         .await
         .unwrap();
-    // println!("dice_value_after: {:?}", dice_value);
 
-    assert!(dice_value[0] == felt!("0x5"), "dice should be 5")
+    println!("dice_value_after: {:?}", dice_value);
+    assert!(dice_value[0] == felt!("0x6"), "dice should be 6")
 }

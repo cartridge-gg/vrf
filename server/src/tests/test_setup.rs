@@ -76,7 +76,9 @@ fn get_compiled_class_hash(artifact_path: &PathBuf) -> Result<Felt> {
 #[tokio::test(flavor = "multi_thread")]
 #[katana_runner::test(accounts = 10)]
 async fn test_info(sequencer: &RunnerCtx) {
-    let args = Args::default().with_rpc_url(sequencer.url().as_str());
+    let args = Args::default()
+        .with_rpc_url(sequencer.url().as_str())
+        .with_secret_key(420);
     let server = new_test_server(&args).await;
 
     let info = server.get("/info").await;

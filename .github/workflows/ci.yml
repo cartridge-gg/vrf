@@ -2,7 +2,7 @@ name: ci
 on: push
 env:
   CARGO_TERM_COLOR: always
-  SCARB_VERSION: 2.12.1
+  SCARB_VERSION: 2.12.2
 jobs:
   fmt:
     runs-on: ubuntu-latest
@@ -42,10 +42,21 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    needs: [build-cairo]
     steps:
       - uses: actions/checkout@v4
 
       - uses: Swatinem/rust-cache@v2
+
+      # This puts Katana in the path for integration tests.
+      - name: Download Katana for integration tests
+        run: |
+          curl -L https://github.com/dojoengine/katana/releases/download/v1.7.0-alpha.4/katana_v1.7.0-alpha.4_linux_amd64.tar.gz -o katana.tar.gz;
+          tar -C /usr/local/bin -xzf katana.tar.gz
+      - uses: actions/download-artifact@v4
+        with:
+          name: cairo-artifacts
+          path: ./target/dev
 
       - name: Run tests
         working-directory: ./server
@@ -73,6 +84,11 @@ jobs:
           scarb-version: ${{ env.SCARB_VERSION }}
       - name: Build
         run: scarb build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cairo-artifacts
+          path: ./target/dev
 
   test-cairo:
     needs: [check-cairo, build-cairo]
