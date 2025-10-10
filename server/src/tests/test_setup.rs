@@ -14,7 +14,7 @@ use std::{fs::File, path::PathBuf};
 pub async fn new_test_server(args: &Args) -> TestServer {
     let app_state = AppState::from_args(args).await;
     let app = create_app(app_state).await;
-    
+
     TestServer::builder()
         .expect_success_by_default()
         .mock_transport()
