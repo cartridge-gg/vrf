@@ -11,20 +11,19 @@ pub mod tests {
     pub mod tests;
 }
 
-use std::sync::{Arc, RwLock};
-
+use crate::routes::info::vrf_info;
+use crate::routes::outside_execution::vrf_outside_execution;
+use crate::routes::proof::vrf_proof;
+use crate::state::AppState;
 use axum::{
     routing::{get, post},
     Router,
 };
 use clap::Parser;
+use std::sync::{Arc, RwLock};
 use tokio::signal;
 use tower_http::trace::TraceLayer;
 use tracing::debug;
-
-use crate::routes::outside_execution::vrf_outside_execution;
-use crate::routes::proof::vrf_proof;
-use crate::{routes::info::vrf_info, state::AppState};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -77,26 +76,25 @@ impl Args {
     }
 }
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() {
-    let app_state = AppState::new().await;
+pub async fn create_app(app_state: AppState) -> Router {
     let shared_state = Arc::new(RwLock::new(app_state));
-
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .init();
-
-    async fn index() -> &'static str {
-        "OK"
-    }
-
-    let app = Router::new()
-        .route("/", get(index))
+    Router::new()
+        .route("/", get("OK"))
         .route("/info", get(vrf_info))
         .route("/proof", post(vrf_proof))
         .route("/outside_execution", post(vrf_outside_execution))
         .layer(TraceLayer::new_for_http())
-        .with_state(Arc::clone(&shared_state));
+        .with_state(Arc::clone(&shared_state))
+}
+
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
+
+    let app_state = AppState::new().await;
+    let app = create_app(app_state).await;
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
         .await

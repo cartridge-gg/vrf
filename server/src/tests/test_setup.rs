@@ -1,17 +1,5 @@
-use crate::{
-    routes::{
-        info::{vrf_info, InfoResult},
-        outside_execution::vrf_outside_execution,
-        proof::vrf_proof,
-    },
-    state::AppState,
-    Args,
-};
+use crate::{create_app, routes::info::InfoResult, state::AppState, Args};
 use anyhow::{anyhow, Result};
-use axum::{
-    routing::{get, post},
-    Router,
-};
 use axum_test::TestServer;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
@@ -21,22 +9,12 @@ use starknet::core::types::{
     FlattenedSierraClass,
 };
 use starknet_crypto::Felt;
-use std::{
-    fs::File,
-    path::PathBuf,
-    sync::{Arc, RwLock},
-};
+use std::{fs::File, path::PathBuf};
 
 pub async fn new_test_server(args: &Args) -> TestServer {
     let app_state = AppState::from_args(args).await;
-    let shared_state = Arc::new(RwLock::new(app_state));
-
-    let app = Router::new()
-        .route("/info", get(vrf_info))
-        .route("/proof", post(vrf_proof))
-        .route("/outside_execution", post(vrf_outside_execution))
-        .with_state(Arc::clone(&shared_state));
-
+    let app = create_app(app_state).await;
+    
     TestServer::builder()
         .expect_success_by_default()
         .mock_transport()
