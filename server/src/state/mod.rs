@@ -3,24 +3,32 @@ use ark_ec::short_weierstrass::Affine;
 use cainome_cairo_serde::ContractAddress;
 use clap::Parser;
 use stark_vrf::{generate_public_key, StarkCurve};
-use starknet::providers::Provider;
+use starknet::core::types::Felt;
 use starknet::signers::{LocalWallet, SigningKey};
-use starknet::{
-    core::types::Felt,
-    providers::{
-        jsonrpc::{HttpTransport, JsonRpcClient},
-        Url,
-    },
-};
+use std::ops::Deref;
 use std::sync::{Arc, RwLock};
-pub type SharedState = Arc<RwLock<AppState>>;
+
+#[derive(Clone)]
+pub struct SharedState(pub Arc<RwLock<AppState>>);
+
+impl Deref for SharedState {
+    type Target = Arc<RwLock<AppState>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl SharedState {
+    pub async fn get(&self) -> AppState {
+        self.0.read().unwrap().clone()
+    }
+}
 
 #[derive(Clone)]
 pub struct AppState {
     pub secret_key: String,
     pub public_key: Affine<StarkCurve>,
-    pub provider: JsonRpcClient<HttpTransport>,
-    pub chain_id: Felt,
     pub vrf_account_address: ContractAddress,
     pub vrf_signer: LocalWallet,
 }
@@ -41,16 +49,9 @@ impl AppState {
             Felt::from_hex(&args.account_private_key).unwrap(),
         ));
 
-        let provider = JsonRpcClient::new(HttpTransport::new(
-            Url::parse(&args.rpc_url).expect("invalid rpc_url"),
-        ));
-        let chain_id = provider.chain_id().await.expect("unable to get chain_id");
-
         AppState {
             secret_key,
             public_key,
-            provider,
-            chain_id,
             vrf_account_address,
             vrf_signer,
         }

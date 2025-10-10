@@ -11,10 +11,10 @@ use std::str::FromStr;
 
 use crate::{
     routes::outside_execution::{
+        context::VrfContext,
         types::{Call, OutsideExecution},
         Errors,
     },
-    state::SharedState,
     utils::format_felt,
 };
 
@@ -44,14 +44,16 @@ impl RequestRandom {
         }
     }
 
-    pub async fn compute_seed(self: &RequestRandom, state: &SharedState) -> Result<Felt, Errors> {
+    pub async fn compute_seed(
+        self: &RequestRandom,
+        vrf_context: &VrfContext,
+    ) -> Result<Felt, Errors> {
         let caller = self.caller.0;
-        let chain_id = state.read().unwrap().chain_id;
 
         let seed = match self.source {
             Source::Nonce(contract_address) => {
-                let provider = state.read().unwrap().provider.clone();
-                let vrf_account_address = state.read().unwrap().vrf_account_address;
+                let provider = vrf_context.provider.clone();
+                let vrf_account_address = vrf_context.vrf_account_address;
 
                 let key = pedersen_hash(&selector!("VrfProvider_nonces"), &contract_address.0);
                 let nonce = provider
@@ -62,20 +64,16 @@ impl RequestRandom {
                     )
                     .await?;
 
-                poseidon_hash_many(&[nonce, contract_address.0, caller, chain_id])
+                poseidon_hash_many(&[nonce, contract_address.0, caller, vrf_context.chain_id])
             }
-            Source::Salt(felt) => poseidon_hash_many(&[felt, caller, chain_id]),
+            Source::Salt(felt) => poseidon_hash_many(&[felt, caller, vrf_context.chain_id]),
         };
 
         Ok(seed)
     }
 }
 
-pub fn build_submit_random_call(state: &SharedState, seed: Felt) -> Call {
-    let secret_key = &state.read().unwrap().secret_key;
-    let public_key = state.read().unwrap().public_key;
-    let vrf_account_address = state.read().unwrap().vrf_account_address;
-
+pub fn build_submit_random_call(vrf_context: &VrfContext, seed: Felt) -> Call {
     let seed_vec: Vec<_> = [seed]
         .iter()
         .map(|x| {
@@ -85,15 +83,18 @@ pub fn build_submit_random_call(state: &SharedState, seed: Felt) -> Call {
         })
         .collect();
 
-    let ecvrf = StarkVRF::new(public_key).unwrap();
+    let ecvrf = StarkVRF::new(vrf_context.public_key).unwrap();
     let proof = ecvrf
-        .prove(&secret_key.parse().unwrap(), seed_vec.as_slice())
+        .prove(
+            &vrf_context.secret_key.parse().unwrap(),
+            seed_vec.as_slice(),
+        )
         .unwrap();
     let sqrt_ratio_hint = ecvrf.hash_to_sqrt_ratio_hint(seed_vec.as_slice());
     // let rnd = ecvrf.proof_to_hash(&proof).unwrap();
 
     Call {
-        to: vrf_account_address.0,
+        to: vrf_context.vrf_account_address.0,
         selector: selector!("submit_random"),
         calldata: vec![
             seed,

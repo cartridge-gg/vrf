@@ -5,16 +5,15 @@ pub mod utils;
 
 #[cfg(test)]
 pub mod tests {
-    #[cfg(test)]
-    pub mod test_setup;
-    #[cfg(test)]
-    pub mod tests;
+    pub mod setup;
+    pub mod test_info;
+    pub mod test_outisde_execution;
 }
 
-use crate::routes::info::vrf_info;
 use crate::routes::outside_execution::vrf_outside_execution;
 use crate::routes::proof::vrf_proof;
 use crate::state::AppState;
+use crate::{routes::info::vrf_info, state::SharedState};
 use axum::{
     routing::{get, post},
     Router,
@@ -39,10 +38,6 @@ pub struct Args {
     /// Account Private Key
     #[arg(long, required = true)]
     account_private_key: String,
-
-    /// Account Private Key
-    #[arg(long, required = true)]
-    rpc_url: String,
 }
 
 impl Default for Args {
@@ -51,7 +46,6 @@ impl Default for Args {
             account_address: "0x123".into(),
             account_private_key: "0x420".into(),
             secret_key: 420,
-            rpc_url: "http://localhost:5050".into(),
         }
     }
 }
@@ -70,21 +64,17 @@ impl Args {
         self.secret_key = secret_key;
         self
     }
-    fn with_rpc_url(mut self, rpc_url: &str) -> Args {
-        self.rpc_url = rpc_url.into();
-        self
-    }
 }
 
 pub async fn create_app(app_state: AppState) -> Router {
-    let shared_state = Arc::new(RwLock::new(app_state));
+    let shared_state = SharedState(Arc::new(RwLock::new(app_state)));
     Router::new()
         .route("/", get("OK"))
         .route("/info", get(vrf_info))
         .route("/proof", post(vrf_proof))
         .route("/outside_execution", post(vrf_outside_execution))
         .layer(TraceLayer::new_for_http())
-        .with_state(Arc::clone(&shared_state))
+        .with_state(shared_state)
 }
 
 #[tokio::main(flavor = "current_thread")]
