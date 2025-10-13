@@ -27,6 +27,10 @@ use tracing::debug;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
+    /// http port
+    #[arg(short, long, default_value_t = 3000)]
+    port: u64,
+
     /// Secret key
     #[arg(short, long, required = true)]
     secret_key: u64,
@@ -43,6 +47,7 @@ pub struct Args {
 impl Default for Args {
     fn default() -> Self {
         Args {
+            port: 3000,
             account_address: "0x123".into(),
             account_private_key: "0x420".into(),
             secret_key: 420,
@@ -52,6 +57,10 @@ impl Default for Args {
 
 #[allow(dead_code)]
 impl Args {
+    fn with_port(mut self, port: u64) -> Args {
+        self.port = port;
+        self
+    }
     fn with_account_address(mut self, account_address: &str) -> Args {
         self.account_address = account_address.into();
         self
@@ -79,6 +88,8 @@ pub async fn create_app(app_state: AppState) -> Router {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
+    let args = Args::parse();
+
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .init();
@@ -86,7 +97,7 @@ async fn main() {
     let app_state = AppState::new().await;
     let app = create_app(app_state).await;
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", args.port))
         .await
         .expect("Failed to bind to port 3000, port already in use by another process. Change the port or terminate the other process.");
 
