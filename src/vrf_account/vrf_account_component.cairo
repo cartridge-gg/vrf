@@ -66,13 +66,7 @@ pub trait AccountABIMutable<TState> {
     // IPublicKey
     fn get_public_key(self: @TState) -> felt252;
     fn set_public_key(ref self: TState, new_public_key: felt252, signature: Span<felt252>);
-
-    // ISRC6CamelOnly
-    fn isValidSignature(self: @TState, hash: felt252, signature: Array<felt252>) -> felt252;
-
-    // IPublicKeyCamel
-    fn getPublicKey(self: @TState) -> felt252;
-    fn setPublicKey(ref self: TState, newPublicKey: felt252, signature: Span<felt252>);
+    
 }
 
 pub const SUBMIT_RANDOM: felt252 = selector!("submit_random");
@@ -270,7 +264,6 @@ pub mod VrfAccountComponent {
             match source {
                 Source::Nonce(addr) => {
                     let consume_count = self._get_consume_count();
-                    // let nonce = self.VrfProvider_nonces.read(addr);
                     let nonce = if consume_count == 0 {
                         // only increment nonce on first consume_random
                         let nonce = self.VrfProvider_nonces.read(addr);
@@ -425,42 +418,6 @@ pub mod VrfAccountComponent {
         }
     }
 
-    /// Adds camelCase support for `ISRC6`.
-    #[embeddable_as(SRC6CamelOnlyImpl)]
-    impl SRC6CamelOnly<
-        TContractState,
-        +HasComponent<TContractState>,
-        +SRC5Component::HasComponent<TContractState>,
-        +Drop<TContractState>,
-    > of interface::ISRC6CamelOnly<ComponentState<TContractState>> {
-        fn isValidSignature(
-            self: @ComponentState<TContractState>, hash: felt252, signature: Array<felt252>,
-        ) -> felt252 {
-            SRC6::is_valid_signature(self, hash, signature)
-        }
-    }
-
-    /// Adds camelCase support for `PublicKeyTrait`.
-    #[embeddable_as(PublicKeyCamelImpl)]
-    impl PublicKeyCamel<
-        TContractState,
-        +HasComponent<TContractState>,
-        +SRC5Component::HasComponent<TContractState>,
-        +Drop<TContractState>,
-    > of interface::IPublicKeyCamel<ComponentState<TContractState>> {
-        fn getPublicKey(self: @ComponentState<TContractState>) -> felt252 {
-            self.Account_public_key.read()
-        }
-
-        fn setPublicKey(
-            ref self: ComponentState<TContractState>,
-            newPublicKey: felt252,
-            signature: Span<felt252>,
-        ) {
-            PublicKey::set_public_key(ref self, newPublicKey, signature);
-        }
-    }
-
     #[embeddable_as(AccountMixinImpl)]
     impl AccountMixin<
         TContractState,
@@ -481,13 +438,6 @@ pub mod VrfAccountComponent {
             self: @ComponentState<TContractState>, hash: felt252, signature: Array<felt252>,
         ) -> felt252 {
             SRC6::is_valid_signature(self, hash, signature)
-        }
-
-        // ISRC6CamelOnly
-        fn isValidSignature(
-            self: @ComponentState<TContractState>, hash: felt252, signature: Array<felt252>,
-        ) -> felt252 {
-            SRC6CamelOnly::isValidSignature(self, hash, signature)
         }
 
         // IDeclarer
@@ -518,19 +468,6 @@ pub mod VrfAccountComponent {
             signature: Span<felt252>,
         ) {
             PublicKey::set_public_key(ref self, new_public_key, signature);
-        }
-
-        // IPublicKeyCamel
-        fn getPublicKey(self: @ComponentState<TContractState>) -> felt252 {
-            PublicKeyCamel::getPublicKey(self)
-        }
-
-        fn setPublicKey(
-            ref self: ComponentState<TContractState>,
-            newPublicKey: felt252,
-            signature: Span<felt252>,
-        ) {
-            PublicKeyCamel::setPublicKey(ref self, newPublicKey, signature);
         }
 
         // ISRC5
