@@ -1,5 +1,4 @@
 use cartridge_vrf::mocks::vrf_consumer_mock::IVrfConsumerMockDispatcher;
-use cartridge_vrf::vrf_provider::vrf_provider_component::PublicKey;
 use openzeppelin::utils::serde::SerializedAppend;
 use openzeppelin_testing::constants::AsAddressImpl;
 use openzeppelin_testing::deployment::declare_and_deploy_at;
@@ -9,7 +8,7 @@ use snforge_std::{
 };
 use starknet::ContractAddress;
 use starknet::account::Call;
-use crate::Source;
+use crate::{PublicKey, Source};
 
 
 // lauch vrf-server : cargo run -r -- -s 420

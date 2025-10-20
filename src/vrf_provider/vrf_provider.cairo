@@ -3,12 +3,12 @@
 
 #[starknet::contract]
 pub mod VrfProvider {
-    use cartridge_vrf::PublicKey;
     use cartridge_vrf::vrf_provider::vrf_provider_component::VrfProviderComponent;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::UpgradeableComponent;
     use openzeppelin::upgrades::interface::IUpgradeable;
     use starknet::{ClassHash, ContractAddress};
+    use crate::PublicKey;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);

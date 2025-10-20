@@ -4,24 +4,7 @@
 use stark_vrf::ecvrf::{ECVRFImpl, Point, Proof};
 use starknet::ContractAddress;
 use starknet::account::Call;
-
-#[derive(Drop, Copy, Clone, Serde, starknet::Store)]
-pub struct VrfPublicKey {
-    pub x: felt252,
-    pub y: felt252,
-}
-
-impl PublicKeyIntoPoint of Into<VrfPublicKey, Point> {
-    fn into(self: VrfPublicKey) -> Point {
-        Point { x: self.x, y: self.y }
-    }
-}
-
-#[derive(Drop, Copy, Clone, Serde)]
-pub enum Source {
-    Nonce: ContractAddress,
-    Salt: felt252,
-}
+use crate::{PublicKey, Source};
 
 
 #[starknet::interface]
@@ -33,10 +16,9 @@ pub trait IVrfAccount<TContractState> {
     fn get_consume_count(self: @TContractState) -> u32;
     fn is_vrf_call(self: @TContractState) -> bool;
 
-    fn get_vrf_public_key(self: @TContractState) -> VrfPublicKey;
-    fn set_vrf_public_key(ref self: TContractState, new_pubkey: VrfPublicKey);
+    fn get_vrf_public_key(self: @TContractState) -> PublicKey;
+    fn set_vrf_public_key(ref self: TContractState, new_pubkey: PublicKey);
 }
-
 
 #[starknet::interface]
 pub trait ISRC6Mutable<TState> {
@@ -66,7 +48,6 @@ pub trait AccountABIMutable<TState> {
     // IPublicKey
     fn get_public_key(self: @TState) -> felt252;
     fn set_public_key(ref self: TState, new_public_key: felt252, signature: Span<felt252>);
-    
 }
 
 pub const SUBMIT_RANDOM: felt252 = selector!("submit_random");
@@ -102,7 +83,7 @@ pub mod VrfAccountComponent {
     #[storage]
     pub struct Storage {
         pub Account_public_key: felt252,
-        pub Vrf_public_key: VrfPublicKey,
+        pub Vrf_public_key: PublicKey,
         // wallet -> nonce
         pub VrfProvider_nonces: Map<ContractAddress, felt252>,
         // seed -> random
@@ -223,11 +204,11 @@ pub mod VrfAccountComponent {
         //
         //
 
-        fn get_vrf_public_key(self: @ComponentState<TContractState>) -> VrfPublicKey {
+        fn get_vrf_public_key(self: @ComponentState<TContractState>) -> PublicKey {
             self.Vrf_public_key.read()
         }
 
-        fn set_vrf_public_key(ref self: ComponentState<TContractState>, new_pubkey: VrfPublicKey) {
+        fn set_vrf_public_key(ref self: ComponentState<TContractState>, new_pubkey: PublicKey) {
             self.assert_only_self();
             self.Vrf_public_key.write(new_pubkey);
         }
@@ -384,7 +365,7 @@ pub mod VrfAccountComponent {
     }
 
     #[embeddable_as(PublicKeyImpl)]
-    impl PublicKey<
+    impl ImplPublicKey<
         TContractState,
         +HasComponent<TContractState>,
         +SRC5Component::HasComponent<TContractState>,
@@ -459,7 +440,7 @@ pub mod VrfAccountComponent {
 
         // IPublicKey
         fn get_public_key(self: @ComponentState<TContractState>) -> felt252 {
-            PublicKey::get_public_key(self)
+            ImplPublicKey::get_public_key(self)
         }
 
         fn set_public_key(
@@ -467,7 +448,7 @@ pub mod VrfAccountComponent {
             new_public_key: felt252,
             signature: Span<felt252>,
         ) {
-            PublicKey::set_public_key(ref self, new_public_key, signature);
+            ImplPublicKey::set_public_key(ref self, new_public_key, signature);
         }
 
         // ISRC5
@@ -537,10 +518,6 @@ pub mod VrfAccountComponent {
             let tx_info = starknet::get_tx_info().unbox();
             let tx_hash = tx_info.transaction_hash;
             let signature = tx_info.signature;
-
-            // println!("tx_hash: 0x{:x}", tx_hash);
-            // println!("signature.0: 0x{:x}", *signature.at(0));
-            // println!("signature.1: 0x{:x}", *signature.at(1));
 
             assert(self._is_valid_signature(tx_hash, signature), Errors::INVALID_SIGNATURE);
             starknet::VALIDATED

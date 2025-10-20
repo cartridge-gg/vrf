@@ -25,8 +25,12 @@ pub mod mocks {
 pub use vrf_consumer::vrf_consumer_component::VrfConsumerComponent;
 
 pub use vrf_provider::vrf_provider_component::{
-    IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source,
+    IVrfProvider, IVrfProviderDispatcher, IVrfProviderDispatcherTrait,
 };
+
+
+pub mod types;
+pub use types::{PublicKey, Source};
 // #[cfg(test)]
 // pub mod tests {
 //     pub mod common;

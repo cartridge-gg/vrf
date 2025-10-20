@@ -1,6 +1,4 @@
-use openzeppelin::account::extensions::src9::{
-    ISRC9_V2Dispatcher, ISRC9_V2DispatcherTrait, OutsideExecution,
-};
+use openzeppelin::account::extensions::src9::OutsideExecution;
 use openzeppelin::account::interface::{ISRC6Dispatcher, ISRC6DispatcherTrait};
 use snforge_std::{
     CheatSpan, cheat_signature, cheat_transaction_hash, start_cheat_caller_address,
@@ -9,40 +7,6 @@ use snforge_std::{
 use starknet::account::Call;
 use super::common::{ANY_CALLER, CONSUMER, CONSUMER_ACCOUNT, VRF_ACCOUNT, ZERO_ADDRESS, setup};
 
-
-// #[test]
-// fn test_outside_execution() {
-//     let setup = setup();
-
-//     start_cheat_caller_address(
-//         setup.consumer_account.contract_address, setup.vrf_account.contract_address,
-//     );
-
-//     let consumer_account_dispatcher = ISRC9_V2Dispatcher {
-//         contract_address: setup.consumer_account.contract_address,
-//     };
-
-//     let call = Call {
-//         to: CONSUMER, selector: selector!("get_dice_value"), calldata: array![].span(),
-//     };
-
-//     let outside_execution = OutsideExecution {
-//         caller: ANY_CALLER,
-//         nonce: 0,
-//         execute_after: 0,
-//         execute_before: 999,
-//         calls: array![call].span(),
-//     };
-
-//     // bad signature
-//     // let signature = array![
-//     //     3594274958101126352035820456274712841571225760934880301290263864554350372584,
-//     //     542810322732310238618427921289179996311709443139220028518567952443965655736,
-//     // ]
-//     //     .span();
-
-//     consumer_account_dispatcher.execute_from_outside_v2(outside_execution, signature);
-// }
 
 #[test]
 fn test_multicall() {

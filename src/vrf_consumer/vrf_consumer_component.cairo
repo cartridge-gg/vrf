@@ -1,4 +1,4 @@
-use cartridge_vrf::PublicKey;
+use crate::types::PublicKey;
 use stark_vrf::ecvrf::ECVRFImpl;
 use starknet::ContractAddress;
 
@@ -10,7 +10,7 @@ trait IVrfConsumer<TContractState> {
 
 #[starknet::component]
 pub mod VrfConsumerComponent {
-    use cartridge_vrf::{IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source};
+    use crate::{IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source};
     use core::num::traits::Zero;
     use stark_vrf::ecvrf::ECVRFImpl;
     use starknet::ContractAddress;
