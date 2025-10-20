@@ -1,6 +1,6 @@
 use stark_vrf::ecvrf::{ECVRFImpl, Point, Proof};
 use starknet::ContractAddress;
-use crate::{Source, PublicKey};
+use crate::{PublicKey, Source};
 
 #[starknet::interface]
 pub trait IVrfProvider<TContractState> {

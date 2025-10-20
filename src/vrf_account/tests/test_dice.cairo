@@ -44,7 +44,6 @@ fn test_vrf() {
 
     let outside_execution = OutsideExecution {
         caller: ANY_CALLER,
-        // caller: VRF_ACCOUNT,
         nonce: 0,
         execute_after: 0,
         execute_before: 999,

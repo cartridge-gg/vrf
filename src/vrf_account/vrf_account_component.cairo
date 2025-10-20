@@ -82,14 +82,16 @@ pub mod VrfAccountComponent {
 
     #[storage]
     pub struct Storage {
-        pub Account_public_key: felt252,
-        pub Vrf_public_key: PublicKey,
+        // vrf public key
+        pub VrfProvider_pubkey: PublicKey,
         // wallet -> nonce
         pub VrfProvider_nonces: Map<ContractAddress, felt252>,
         // seed -> random
         pub VrfProvider_random: Map<felt252, felt252>,
         // seed -> consume_random call count
         pub VrfProvider_consume_count: Option<u32>,
+        // account public key
+        pub Account_public_key: felt252,
     }
 
     #[event]
@@ -205,12 +207,12 @@ pub mod VrfAccountComponent {
         //
 
         fn get_vrf_public_key(self: @ComponentState<TContractState>) -> PublicKey {
-            self.Vrf_public_key.read()
+            self.VrfProvider_pubkey.read()
         }
 
         fn set_vrf_public_key(ref self: ComponentState<TContractState>, new_pubkey: PublicKey) {
             self.assert_only_self();
-            self.Vrf_public_key.write(new_pubkey);
+            self.VrfProvider_pubkey.write(new_pubkey);
         }
     }
 

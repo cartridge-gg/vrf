@@ -1,6 +1,6 @@
-use crate::types::PublicKey;
 use stark_vrf::ecvrf::ECVRFImpl;
 use starknet::ContractAddress;
+use crate::types::PublicKey;
 
 #[starknet::interface]
 trait IVrfConsumer<TContractState> {
@@ -10,11 +10,11 @@ trait IVrfConsumer<TContractState> {
 
 #[starknet::component]
 pub mod VrfConsumerComponent {
-    use crate::{IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source};
     use core::num::traits::Zero;
     use stark_vrf::ecvrf::ECVRFImpl;
     use starknet::ContractAddress;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use crate::{IVrfProviderDispatcher, IVrfProviderDispatcherTrait, PublicKey, Source};
 
     #[storage]
     pub struct Storage {
