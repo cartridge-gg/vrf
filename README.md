@@ -1,6 +1,37 @@
 # Overview
 
-This Cartridge Verfiable Random Function (VRF) is designed to provide cheap, atomic verfiable randomness for fully onchain games.
+This Cartridge Verifiable Random Function (VRF) is designed to provide cheap, atomic verifiable randomness for fully onchain games.
+
+## Installation
+
+### Using asdf (recommended)
+
+```bash
+asdf plugin add vrf https://github.com/cartridge-gg/vrf.git
+asdf install vrf latest
+asdf set vrf latest
+```
+
+Once installed, the `vrf-server` binary will be available:
+
+```bash
+vrf-server --help
+```
+
+### Pre-built Binaries
+
+Download pre-built binaries from the [GitHub Releases](https://github.com/cartridge-gg/vrf/releases) page. Binaries are available for:
+
+- Linux (x86_64, aarch64)
+- macOS (x86_64, Apple Silicon)
+- Windows (x86_64)
+
+### Building from Source
+
+```bash
+cd server
+cargo build --release
+```
 
 ## Key Features
 

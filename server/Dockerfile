@@ -30,8 +30,8 @@ FROM rust:1-alpine
 
 WORKDIR /
 
-COPY --from=builder /app/target/release/vrf_demo-rpc-server /usr/local/bin/server
+COPY --from=builder /app/target/release/vrf-server /usr/local/bin/vrf-server
 
 EXPOSE 3000
 
-ENTRYPOINT [ "server" ]
+ENTRYPOINT [ "vrf-server" ]
