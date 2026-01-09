@@ -5,6 +5,8 @@ pub trait IVrfConsumerMock<TContractState> {
 
     fn not_consuming(ref self: TContractState);
 
+    fn get_dice_value(self: @TContractState) -> u8;
+
     // admin
     fn set_vrf_provider(ref self: TContractState, new_vrf_provider: starknet::ContractAddress);
 }
@@ -15,6 +17,7 @@ pub mod VrfConsumer {
     use cartridge_vrf::Source;
     use cartridge_vrf::vrf_consumer::vrf_consumer_component::VrfConsumerComponent;
     use stark_vrf::ecvrf::ECVRFImpl;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use starknet::{ContractAddress, get_caller_address};
 
     component!(path: VrfConsumerComponent, storage: vrf_consumer, event: VrfConsumerEvent);
@@ -28,6 +31,7 @@ pub mod VrfConsumer {
     pub struct Storage {
         #[substorage(v0)]
         vrf_consumer: VrfConsumerComponent::Storage,
+        dice_value: u8,
     }
 
     #[event]
@@ -44,18 +48,30 @@ pub mod VrfConsumer {
 
     #[abi(embed_v0)]
     impl ConsumerImpl of super::IVrfConsumerMock<ContractState> {
-        // throw dice
+        fn get_dice_value(self: @ContractState) -> u8 {
+            self.dice_value.read()
+        }
+
+
         fn dice(ref self: ContractState) -> u8 {
             let player_id = get_caller_address();
             let random: u256 = self.vrf_consumer.consume_random(Source::Nonce(player_id)).into();
 
-            ((random % 6) + 1).try_into().unwrap()
+            let dice_value = ((random % 6) + 1).try_into().unwrap();
+            self.dice_value.write(dice_value);
+            println!("dice_value: {}", dice_value);
+
+            dice_value
         }
 
         fn dice_with_salt(ref self: ContractState) -> u8 {
             let random: u256 = self.vrf_consumer.consume_random(Source::Salt('salt')).into();
 
-            ((random % 6) + 1).try_into().unwrap()
+            let dice_value = ((random % 6) + 1).try_into().unwrap();
+            self.dice_value.write(dice_value);
+            println!("dice_value: {}", dice_value);
+
+            dice_value
         }
 
         fn not_consuming(ref self: ContractState) {
