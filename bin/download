@@ -2,6 +2,28 @@
 
 set -euo pipefail
 
+resolve_version() {
+  local version="$1"
+  # Strip any trailing whitespace or carriage returns
+  version=$(echo "$version" | tr -d '[:space:]')
+
+  if [[ "$version" == "latest" ]]; then
+    local script_dir
+    script_dir="$(dirname "$0")"
+    if [[ ! -x "$script_dir/list-all" ]]; then
+      echo "Error: list-all script not found or not executable" >&2
+      exit 1
+    fi
+    version=$("$script_dir/list-all" | tail -n1)
+    if [[ -z "$version" ]]; then
+      echo "Error: Could not determine latest version" >&2
+      exit 1
+    fi
+  fi
+
+  echo "$version"
+}
+
 get_platform() {
   local os arch
 
@@ -69,6 +91,9 @@ main() {
     echo "ASDF_DOWNLOAD_PATH is required" >&2
     exit 1
   fi
+
+  # Resolve "latest" to actual version number
+  version=$(resolve_version "$version")
 
   local platform extension
   platform=$(get_platform)
