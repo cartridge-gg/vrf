@@ -1,9 +1,10 @@
-FROM rust:1-alpine AS chef
-RUN rustup install 1.79.0
-RUN rustup component add cargo clippy rust-docs rust-std rustc rustfmt
-
-# Use apk for package management in Alpine
-RUN apk add --no-cache build-base libressl-dev
+FROM rust:1.88.0-bookworm AS chef
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    git \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 RUN cargo install cargo-chef
 
 FROM chef AS planner
@@ -18,15 +19,15 @@ WORKDIR /app
 COPY --from=planner /app/recipe.json recipe.json
 # Build dependencies - this is the caching Docker layer!
 RUN cargo chef cook --release --recipe-path recipe.json
-RUN cargo build --release
 
 # Build application
 COPY . .
-ENV PATH="/root/.cargo/bin:${PATH}"
-
 RUN cargo build --release
 
-FROM rust:1-alpine
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /
 
