@@ -27,6 +27,10 @@ use tracing::debug;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
+    /// http host
+    #[arg(long, default_value = "0.0.0.0")]
+    host: String,
+
     /// http port
     #[arg(short, long, default_value_t = 3000)]
     port: u64,
@@ -47,6 +51,7 @@ pub struct Args {
 impl Default for Args {
     fn default() -> Self {
         Args {
+            host: "0.0.0.0".into(),
             port: 3000,
             account_address: "0x123".into(),
             account_private_key: "0x420".into(),
@@ -57,6 +62,10 @@ impl Default for Args {
 
 #[allow(dead_code)]
 impl Args {
+    fn with_host(mut self, host: &str) -> Args {
+        self.host = host.into();
+        self
+    }
     fn with_port(mut self, port: u64) -> Args {
         self.port = port;
         self
@@ -97,11 +106,12 @@ async fn main() {
     let app_state = AppState::new().await;
     let app = create_app(app_state).await;
 
-    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", args.port))
+    let bind_addr = format!("{}:{}", args.host, args.port);
+    let listener = tokio::net::TcpListener::bind(&bind_addr)
         .await
-        .expect("Failed to bind to port 3000, port already in use by another process. Change the port or terminate the other process.");
+        .expect("Failed to bind to host/port, port already in use by another process. Change the host/port or terminate the other process.");
 
-    debug!("Server started on http://0.0.0.0:3000");
+    debug!("Server started on http://{}", bind_addr);
 
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
