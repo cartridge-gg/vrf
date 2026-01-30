@@ -205,7 +205,7 @@ async fn test_outside_execution(sequencer: &RunnerCtx) {
         .unwrap();
 
     println!("dice_value_after: {dice_value:?}");
-    assert!(dice_value[0] == felt!("0x4"), "dice should be 6")
+    assert!(dice_value[0] == felt!("0x5"), "dice should be 5")
 }
 
 pub fn mock_signed_outside_execution() -> SignedOutsideExecution {

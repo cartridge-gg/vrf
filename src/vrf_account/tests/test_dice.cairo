@@ -7,6 +7,13 @@ use snforge_std::{
 use starknet::account::Call;
 use super::common::{ANY_CALLER, CONSUMER, CONSUMER_ACCOUNT, VRF_ACCOUNT, ZERO_ADDRESS, setup};
 
+#[starknet::interface]
+pub trait IOutsideExecutionV2<TContractState> {
+    fn execute_from_outside_v2(
+        ref self: TContractState, outside_execution: OutsideExecution, signature: Span<felt252>,
+    ) -> Array<Span<felt252>>;
+}
+
 
 #[test]
 fn test_multicall() {
@@ -102,4 +109,43 @@ fn test_vrf() {
 
     disp.__validate__(vrf_account_calls.clone());
     disp.__execute__(vrf_account_calls);
+}
+
+#[test]
+#[should_panic(expected: 'VrfProvider: not consumed')]
+fn test_outside_execution__must_consume() {
+    let setup = setup();
+
+    let sumbit_random = Call {
+        to: VRF_ACCOUNT,
+        selector: selector!("submit_random"),
+        calldata: array![
+            0x5db4e1c9bd8b0898674bf96f79e8fbffa3fe6d70a4597683c4dba2f0930dc45, // seed
+            // proof
+            0x16aec715f329872b75ca9beb77557ca6c9d3a67a01a3363df86496d2c3a261d,
+            0x22c44f72eccd63fb28a0e7bf3205f45130c57db28f9c35777e90ae5e414c246,
+            0x28bfff7440a8dcd8e86d260eff5aea305db55b9183109eff9f81a99e150e8ea,
+            0x16d49559522712102d3459c7999b0fabf24f2525b1a5e3f91d148a7a7256576,
+            0x5c87f6e05d61823e0646ff56675fab2e3c01b5b09deee479390d5a50ce34b83,
+        ]
+            .span(),
+    };
+    let not_consuming = Call {
+        to: CONSUMER, selector: selector!("not_consuming"), calldata: array![].span(),
+    };
+
+    let calls = array![sumbit_random, not_consuming];
+    let outside_execution = OutsideExecution {
+        caller: ANY_CALLER, nonce: 0, execute_after: 0, execute_before: 999, calls: calls.span(),
+    };
+    let signature = array![
+        0x7fecf764944ad39da31b41682b815078d5121fd0c91370e9f9ebc0ac2611332,
+        0x57fa6fef2cb679ebd9acf214490ac0d3a194513dfa73e81c341a1f8866029fb,
+    ]
+        .span();
+
+    let disp = IOutsideExecutionV2Dispatcher {
+        contract_address: setup.vrf_account.contract_address,
+    };
+    disp.execute_from_outside_v2(outside_execution, signature);
 }

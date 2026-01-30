@@ -273,6 +273,34 @@ pub mod VrfAccountComponent {
         }
     }
 
+    #[generate_trait]
+    pub impl VrfOutsideExecutionImpl<
+        TContractState,
+        +HasComponent<TContractState>,
+        impl SRC5: SRC5Component::HasComponent<TContractState>,
+        +Drop<TContractState>,
+    > of VrfOutsideExecutionTrait<TContractState> {
+        fn execute_and_assert_consumed_if_submit_random(
+            ref self: ComponentState<TContractState>, calls: Span<Call>,
+        ) -> Array<Span<felt252>> {
+            let mut should_assert_consumed_seed = Option::None;
+            let mut results = array![];
+            for call in calls {
+                if self._is_submit_random_call(call) {
+                    should_assert_consumed_seed = Option::Some(call.calldata.at(0));
+                }
+                results.append(execute_single_call(call));
+            }
+
+            if should_assert_consumed_seed.is_some() {
+                let seed = *should_assert_consumed_seed.unwrap();
+                self._assert_consumed(seed);
+            }
+
+            results
+        }
+    }
+
     //
     // External
     //
@@ -298,18 +326,7 @@ pub mod VrfAccountComponent {
             assert(sender.is_zero(), Errors::INVALID_CALLER);
             assert(is_tx_version_valid(), Errors::INVALID_TX_VERSION);
 
-            let mut should_assert_consumed_seed = Option::None;
-            for call in calls.span() {
-                if self._is_submit_random_call(call) {
-                    should_assert_consumed_seed = Option::Some(call.calldata.at(0));
-                }
-                execute_single_call(call);
-            }
-
-            if should_assert_consumed_seed.is_some() {
-                let seed = *should_assert_consumed_seed.unwrap();
-                self._assert_consumed(seed);
-            }
+            let _ = self.execute_and_assert_consumed_if_submit_random(calls.span());
         }
 
         /// Verifies the validity of the signature for the current transaction.

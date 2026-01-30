@@ -9,6 +9,7 @@ pub mod vrf_consumer {
 }
 
 pub mod vrf_account {
+    pub mod src9;
     pub mod vrf_account;
     pub mod vrf_account_component;
 
