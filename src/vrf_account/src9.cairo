@@ -10,8 +10,8 @@
 /// interface.
 #[starknet::component]
 pub mod SRC9Component {
-    use openzeppelin::account::extensions::src9::{OutsideExecution, interface};
     use openzeppelin::account::extensions::src9::snip12_utils::OutsideExecutionStructHash;
+    use openzeppelin::account::extensions::src9::{OutsideExecution, interface};
     use openzeppelin::account::interface::{ISRC6Dispatcher, ISRC6DispatcherTrait};
     use openzeppelin::account::utils::execute_calls;
     use openzeppelin::introspection::src5::SRC5Component;

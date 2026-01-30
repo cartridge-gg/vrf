@@ -10,9 +10,7 @@ use super::common::{ANY_CALLER, CONSUMER, CONSUMER_ACCOUNT, VRF_ACCOUNT, ZERO_AD
 #[starknet::interface]
 pub trait IOutsideExecutionV2<TContractState> {
     fn execute_from_outside_v2(
-        ref self: TContractState,
-        outside_execution: OutsideExecution,
-        signature: Span<felt252>,
+        ref self: TContractState, outside_execution: OutsideExecution, signature: Span<felt252>,
     ) -> Array<Span<felt252>>;
 }
 
@@ -138,11 +136,7 @@ fn test_outside_execution__must_consume() {
 
     let calls = array![sumbit_random, not_consuming];
     let outside_execution = OutsideExecution {
-        caller: ANY_CALLER,
-        nonce: 0,
-        execute_after: 0,
-        execute_before: 999,
-        calls: calls.span(),
+        caller: ANY_CALLER, nonce: 0, execute_after: 0, execute_before: 999, calls: calls.span(),
     };
     let signature = array![
         0x7fecf764944ad39da31b41682b815078d5121fd0c91370e9f9ebc0ac2611332,
@@ -150,6 +144,8 @@ fn test_outside_execution__must_consume() {
     ]
         .span();
 
-    let disp = IOutsideExecutionV2Dispatcher { contract_address: setup.vrf_account.contract_address };
+    let disp = IOutsideExecutionV2Dispatcher {
+        contract_address: setup.vrf_account.contract_address,
+    };
     disp.execute_from_outside_v2(outside_execution, signature);
 }
