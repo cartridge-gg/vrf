@@ -1,4 +1,4 @@
-FROM rust:1.88.0-bookworm AS chef
+FROM rust:1.89.0-bookworm AS chef
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
