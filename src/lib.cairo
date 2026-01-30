@@ -11,6 +11,7 @@ pub mod vrf_consumer {
 pub mod vrf_account {
     pub mod vrf_account;
     pub mod vrf_account_component;
+    pub mod src9;
 
     #[cfg(test)]
     pub mod tests {
@@ -38,5 +39,4 @@ pub use types::{PublicKey, Source};
 //     pub mod common;
 //     pub mod test_dice;
 // }
-
 
