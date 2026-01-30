@@ -13,7 +13,6 @@ pub mod SRC9Component {
     use openzeppelin::account::extensions::src9::snip12_utils::OutsideExecutionStructHash;
     use openzeppelin::account::extensions::src9::{OutsideExecution, interface};
     use openzeppelin::account::interface::{ISRC6Dispatcher, ISRC6DispatcherTrait};
-    use openzeppelin::account::utils::execute_calls;
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::introspection::src5::SRC5Component::InternalTrait as SRC5InternalTrait;
     use openzeppelin::utils::cryptography::snip12::{OffchainMessageHash, SNIP12Metadata};
@@ -117,10 +116,8 @@ pub mod SRC9Component {
             assert(is_valid_signature, Errors::INVALID_SIGNATURE);
 
             // 5. Execute the calls
-            let result = execute_calls(outside_execution.calls);
             let mut vrf_component = get_dep_component_mut!(ref self, VRF);
-            vrf_component.assert_consumed_if_submit_random(outside_execution.calls);
-            result
+            vrf_component.execute_and_assert_consumed_if_submit_random(outside_execution.calls)
         }
 
         /// Returns the status of a given nonce. `true` if the nonce is available to use.
