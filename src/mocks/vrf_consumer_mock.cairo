@@ -59,7 +59,6 @@ pub mod VrfConsumer {
 
             let dice_value = ((random % 6) + 1).try_into().unwrap();
             self.dice_value.write(dice_value);
-            println!("dice_value: {}", dice_value);
 
             dice_value
         }
@@ -69,7 +68,6 @@ pub mod VrfConsumer {
 
             let dice_value = ((random % 6) + 1).try_into().unwrap();
             self.dice_value.write(dice_value);
-            println!("dice_value: {}", dice_value);
 
             dice_value
         }
