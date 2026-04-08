@@ -311,7 +311,6 @@ async fn test_with_invalid_json_value() {
       "request": {
         "address": "0x111",
         "outside_execution": {
-          "V3": {
             "caller": "0x414e595f43414c4c4552",
             "calls": [
               {
@@ -331,7 +330,6 @@ async fn test_with_invalid_json_value() {
               "0x564b73282b2fb5f201cf2070bf0ca2526871cb7daa06e0e805521ef5d907b33",
               "0xa"
             ]
-          }
         },
         "signature": ["0x12345", "0x67890"]
       },

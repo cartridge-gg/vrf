@@ -93,7 +93,7 @@ pub struct OutsideExecutionV3 {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-// #[serde(untagged)]
+#[serde(untagged)]
 pub enum OutsideExecution {
     /// SNIP-9 standard version.
     V2(OutsideExecutionV2),
