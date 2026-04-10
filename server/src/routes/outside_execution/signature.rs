@@ -1,71 +1,51 @@
-// https://github.com/neotheprogramist/starknet-hive/blob/48d4446b2e8ccf4194242cbe0102107f9df8e26d/openrpc-testgen/src/utils/outside_execution.rs#L20
+// Delegates SNIP-12 message hashing to account_sdk:
+// https://github.com/cartridge-gg/controller-rs/blob/main/account_sdk/src/account/outside_execution.rs
+// https://github.com/cartridge-gg/controller-rs/blob/main/account_sdk/src/account/outside_execution_v2.rs
+// https://github.com/cartridge-gg/controller-rs/blob/main/account_sdk/src/account/outside_execution_v3.rs
 
-use cainome::cairo_serde_derive::CairoSerde;
+use account_sdk::account::outside_execution::OutsideExecution as SdkOutsideExecution;
+use account_sdk::account::outside_execution_v2::OutsideExecutionV2 as SdkOutsideExecutionV2;
+use account_sdk::hash::MessageHashRev1;
+use cainome_cairo_serde::ContractAddress;
 use starknet::signers::{LocalWallet, Signer};
-use starknet_crypto::{poseidon_hash_many, Felt, PoseidonHasher};
+use starknet_crypto::Felt;
 
-use crate::routes::outside_execution::types::{Call, OutsideExecution};
+use crate::routes::outside_execution::types::OutsideExecution;
 
-pub const STARKNET_DOMAIN_TYPE_HASH: Felt = starknet_crypto::Felt::from_hex_unchecked(
-    "0x1ff2f602e42168014d405a94f75e8a93d640751d71d16311266e140d8b0a210",
-);
-pub const CALL_TYPE_HASH: Felt =
-    Felt::from_hex_unchecked("0x3635c7f2a7ba93844c0d064e18e487f35ab90f7c39d00f186a781fc3f0c2ca9");
-pub const OUTSIDE_EXECUTION_TYPE_HASH: Felt =
-    Felt::from_hex_unchecked("0x312b56c05a7965066ddbda31c016d8d05afc305071c0ca3cdc2192c3c2f1f0f");
-
-#[derive(Debug, CairoSerde)]
-pub struct StarknetDomain {
-    pub name: Felt,
-    pub version: Felt,
-    pub chain_id: Felt,
-    pub revision: Felt,
-}
-
-pub fn get_starknet_domain_hash(chain_id: Felt) -> Felt {
-    let domain = StarknetDomain {
-        name: Felt::from_bytes_be_slice(b"Account.execute_from_outside"),
-        version: Felt::TWO,
-        chain_id,
-        revision: Felt::ONE,
-    };
-
-    let domain_vec = vec![
-        STARKNET_DOMAIN_TYPE_HASH,
-        domain.name,
-        domain.version,
-        domain.chain_id,
-        domain.revision,
-    ];
-    poseidon_hash_many(&domain_vec)
-}
-
-pub fn get_outside_execution_hash(outside_execution: &OutsideExecution) -> Felt {
-    let calls_vec = outside_execution.calls().clone();
-    let mut hashed_calls = Vec::<Felt>::new();
-
-    for call in calls_vec {
-        hashed_calls.push(get_call_hash(call));
+/// Convert local OutsideExecution to account_sdk's type for hashing.
+fn to_sdk_outside_execution(outside_execution: &OutsideExecution) -> SdkOutsideExecution {
+    match outside_execution {
+        OutsideExecution::V2(v2) => SdkOutsideExecution::V2(SdkOutsideExecutionV2 {
+            caller: ContractAddress(v2.caller),
+            nonce: v2.nonce,
+            execute_after: v2.execute_after,
+            execute_before: v2.execute_before,
+            calls: v2
+                .calls
+                .iter()
+                .map(|c| {
+                    let starknet_call: starknet::core::types::Call = c.clone().into();
+                    starknet_call.into()
+                })
+                .collect(),
+        }),
+        OutsideExecution::V3(v3) => {
+            SdkOutsideExecution::V3(account_sdk::abigen::controller::OutsideExecutionV3 {
+                caller: ContractAddress(v3.caller),
+                nonce: (v3.nonce.0, v3.nonce.1),
+                execute_after: v3.execute_after,
+                execute_before: v3.execute_before,
+                calls: v3
+                    .calls
+                    .iter()
+                    .map(|c| {
+                        let starknet_call: starknet::core::types::Call = c.clone().into();
+                        starknet_call.into()
+                    })
+                    .collect(),
+            })
+        }
     }
-
-    let mut hasher_outside_execution = PoseidonHasher::new();
-    hasher_outside_execution.update(OUTSIDE_EXECUTION_TYPE_HASH);
-    hasher_outside_execution.update(outside_execution.caller());
-    hasher_outside_execution.update(outside_execution.nonce());
-    hasher_outside_execution.update(Felt::from(outside_execution.execute_after()));
-    hasher_outside_execution.update(Felt::from(outside_execution.execute_before()));
-    hasher_outside_execution.update(poseidon_hash_many(&hashed_calls));
-
-    hasher_outside_execution.finalize()
-}
-
-pub fn get_call_hash(call: Call) -> Felt {
-    let mut hasher_call = PoseidonHasher::new();
-    hasher_call.update(CALL_TYPE_HASH);
-    hasher_call.update(call.to);
-    hasher_call.update(call.selector);
-    hasher_call.update(poseidon_hash_many(&call.calldata));
-    hasher_call.finalize()
 }
 
 pub async fn sign_outside_execution(
@@ -74,13 +54,8 @@ pub async fn sign_outside_execution(
     signer_address: Felt,
     signer: LocalWallet,
 ) -> Vec<Felt> {
-    let mut final_hasher = PoseidonHasher::new();
-    final_hasher.update(Felt::from_bytes_be_slice(b"StarkNet Message"));
-    final_hasher.update(get_starknet_domain_hash(chain_id));
-    final_hasher.update(signer_address);
-    final_hasher.update(get_outside_execution_hash(outside_execution));
-
-    let hash = final_hasher.finalize();
+    let sdk_outside_execution = to_sdk_outside_execution(outside_execution);
+    let hash = sdk_outside_execution.get_message_hash_rev_1(chain_id, signer_address);
 
     let signature = signer.sign_hash(&hash).await.unwrap();
 

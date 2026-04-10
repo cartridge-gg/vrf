@@ -5,7 +5,8 @@ pub mod vrf_types;
 use crate::routes::outside_execution::context::{RequestContext, VrfContext};
 use crate::routes::outside_execution::signature::sign_outside_execution;
 use crate::routes::outside_execution::types::{
-    Call, OutsideExecution, OutsideExecutionV2, SignedOutsideExecution,
+    Call, NonceChannel, OutsideExecution, OutsideExecutionV2, OutsideExecutionV3,
+    SignedOutsideExecution,
 };
 use crate::routes::outside_execution::vrf_types::{build_submit_random_call, RequestRandom};
 use crate::state::SharedState;
@@ -76,13 +77,26 @@ pub async fn vrf_outside_execution(
 
     let calls = vec![sumbit_random_call, execute_from_outside_call];
 
-    let signed_outside_execution = build_signed_outside_execution_v2(
-        vrf_context.vrf_account_address.0,
-        vrf_context.vrf_signer,
-        vrf_context.chain_id,
-        calls,
-    )
-    .await;
+    let signed_outside_execution = match &outside_execution {
+        OutsideExecution::V2(_) => {
+            build_signed_outside_execution_v2(
+                vrf_context.vrf_account_address.0,
+                vrf_context.vrf_signer,
+                vrf_context.chain_id,
+                calls,
+            )
+            .await
+        }
+        OutsideExecution::V3(_) => {
+            build_signed_outside_execution_v3(
+                vrf_context.vrf_account_address.0,
+                vrf_context.vrf_signer,
+                vrf_context.chain_id,
+                calls,
+            )
+            .await
+        }
+    };
 
     Ok(Json(OutsideExecutionResult {
         result: signed_outside_execution,
@@ -114,6 +128,35 @@ pub fn build_outside_execution_v2(calls: Vec<Call>) -> OutsideExecution {
         execute_before: now + 600,
         calls,
         nonce: SigningKey::from_random().secret_scalar(),
+    })
+}
+
+pub async fn build_signed_outside_execution_v3(
+    account_address: Felt,
+    signer: LocalWallet,
+    chain_id: Felt,
+    calls: Vec<Call>,
+) -> SignedOutsideExecution {
+    let outside_execution = build_outside_execution_v3(calls);
+
+    let signature =
+        sign_outside_execution(&outside_execution, chain_id, account_address, signer).await;
+
+    SignedOutsideExecution {
+        address: account_address,
+        outside_execution,
+        signature,
+    }
+}
+
+pub fn build_outside_execution_v3(calls: Vec<Call>) -> OutsideExecution {
+    let now = Utc::now().timestamp() as u64;
+    OutsideExecution::V3(OutsideExecutionV3 {
+        caller: ANY_CALLER,
+        execute_after: 0,
+        execute_before: now + 600,
+        calls,
+        nonce: NonceChannel(SigningKey::from_random().secret_scalar(), 0),
     })
 }
 

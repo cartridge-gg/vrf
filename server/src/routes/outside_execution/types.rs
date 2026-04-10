@@ -120,14 +120,6 @@ impl OutsideExecution {
             OutsideExecution::V3(outside_execution_v3) => outside_execution_v3.caller,
         }
     }
-    pub fn nonce(self: &OutsideExecution) -> Felt {
-        match self {
-            OutsideExecution::V2(outside_execution_v2) => outside_execution_v2.nonce,
-            OutsideExecution::V3(_) => {
-                unreachable!()
-            }
-        }
-    }
     pub fn execute_after(self: &OutsideExecution) -> u64 {
         match self {
             OutsideExecution::V2(outside_execution_v2) => outside_execution_v2.execute_after,
