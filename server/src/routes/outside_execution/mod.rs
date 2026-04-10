@@ -24,8 +24,7 @@ use starknet::providers::ProviderError;
 use starknet::signers::{LocalWallet, SigningKey};
 use tracing::debug;
 
-pub const ANY_CALLER: ContractAddress =
-    ContractAddress(felt!("0x414e595f43414c4c4552")); // ANY_CALLER
+pub const ANY_CALLER: ContractAddress = ContractAddress(felt!("0x414e595f43414c4c4552")); // ANY_CALLER
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OutsideExecutionRequest {
