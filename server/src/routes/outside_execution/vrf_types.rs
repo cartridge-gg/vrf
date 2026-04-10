@@ -12,7 +12,7 @@ use std::str::FromStr;
 use crate::{
     routes::outside_execution::{
         context::VrfContext,
-        types::{Call, OutsideExecution},
+        types::{get_calls, Call, OutsideExecution},
         Errors,
     },
     utils::format_felt,
@@ -32,14 +32,14 @@ pub struct RequestRandom {
 
 impl RequestRandom {
     pub fn get_request_random_call(outside_execution: &OutsideExecution) -> (Option<Call>, usize) {
-        let calls = outside_execution.calls();
+        let calls = get_calls(outside_execution);
 
         let position = calls
             .iter()
             .position(|call| call.selector == selector!("request_random"));
 
         match position {
-            Some(position) => (Option::Some(calls.get(position).unwrap().clone()), position),
+            Some(position) => (Option::Some(calls[position].clone()), position),
             None => (Option::None, 0),
         }
     }
@@ -94,7 +94,7 @@ pub fn build_submit_random_call(vrf_context: &VrfContext, seed: Felt) -> Call {
     // let rnd = ecvrf.proof_to_hash(&proof).unwrap();
 
     Call {
-        to: vrf_context.vrf_account_address.0,
+        to: vrf_context.vrf_account_address,
         selector: selector!("submit_random"),
         calldata: vec![
             seed,

@@ -18,7 +18,7 @@ use num::FromPrimitive;
 use serde_json::json;
 use starknet::{
     accounts::{Account, SingleOwnerAccount},
-    core::types::{BlockId, Call, FunctionCall},
+    core::types::{BlockId, FunctionCall},
     macros::{felt, selector},
     providers::Provider,
     signers::{LocalWallet, SigningKey},
@@ -51,7 +51,7 @@ async fn test_outside_execution(sequencer: &RunnerCtx) {
 
     // transfer strk to vrf_account
     let transfer_tx_result = account
-        .execute_v3(vec![Call {
+        .execute_v3(vec![starknet::core::types::Call {
             to: STRK_ADDRESS,
             selector: selector!("transfer"),
             calldata: vec![
@@ -70,7 +70,7 @@ async fn test_outside_execution(sequencer: &RunnerCtx) {
 
     // set_vrf_public_key
     let set_vrf_public_key_tx_result = vrf_account
-        .execute_v3(vec![Call {
+        .execute_v3(vec![starknet::core::types::Call {
             to: vrf_account_address.0,
             selector: selector!("set_vrf_public_key"),
             calldata: VRF_PUBLIC_KEY.into(),
@@ -112,7 +112,7 @@ async fn test_outside_execution(sequencer: &RunnerCtx) {
     );
 
     let user_calls = vec![
-        Call {
+        starknet::core::types::Call {
             to: vrf_account_address.0,
             selector: selector!("request_random"),
             calldata: vec![
@@ -122,7 +122,7 @@ async fn test_outside_execution(sequencer: &RunnerCtx) {
             ],
         }
         .into(),
-        Call {
+        starknet::core::types::Call {
             to: consumer_address.0,
             selector: selector!("dice"),
             calldata: vec![],
