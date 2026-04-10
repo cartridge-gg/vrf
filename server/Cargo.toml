@@ -18,7 +18,8 @@ tracing-subscriber = "0.3.18"
 prost = "0.12.3"
 stark-vrf = { git = "https://github.com/dojoengine/stark-vrf.git" }
 num = "0.4.3"
-clap = { version = "4.5.17", features = ["derive"] }
+clap = { version = "4.5.17", features = ["derive", "string"] }
+const_format = "0.2.33"
 starknet = "0.17.0"
 starknet-crypto = "0.8.1"
 account_sdk = { git = "https://github.com/cartridge-gg/controller-rs", rev = "44f18f3", default-features = false }
@@ -39,3 +40,5 @@ cairo-lang-starknet-classes = "2.11.2"
 
 [build-dependencies]
 prost-build = "0.12.3"
+vergen = { version = "9.0.0", features = ["build", "cargo", "emit_and_set"] }
+vergen-gitcl = { version = "9.0.0", features = ["build", "cargo", "rustc", "si"] }
