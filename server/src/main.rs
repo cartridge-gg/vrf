@@ -2,6 +2,7 @@ pub mod oracle;
 pub mod routes;
 pub mod state;
 pub mod utils;
+pub mod version;
 
 #[cfg(test)]
 pub mod tests {
@@ -25,7 +26,7 @@ use tower_http::trace::TraceLayer;
 use tracing::debug;
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(version = version::generate_short(), long_version = version::generate_long(), about, long_about = None)]
 pub struct Args {
     /// http host
     #[arg(long, default_value = "0.0.0.0")]
