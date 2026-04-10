@@ -20,7 +20,13 @@ const VERGEN_BUILD_TIMESTAMP: &str = env!("VERGEN_BUILD_TIMESTAMP");
 // > 0.1.0 (77d4800)
 // > if on dev (ie dirty):  0.1.0-dev (77d4800)
 pub fn generate_short() -> &'static str {
-    const_format::concatcp!(CARGO_PKG_VERSION, DEV_BUILD_SUFFIX, " (", VERGEN_GIT_SHA, ")")
+    const_format::concatcp!(
+        CARGO_PKG_VERSION,
+        DEV_BUILD_SUFFIX,
+        " (",
+        VERGEN_GIT_SHA,
+        ")"
+    )
 }
 
 pub fn generate_long() -> String {
