@@ -5,7 +5,8 @@ pub mod vrf_types;
 use crate::routes::outside_execution::context::{RequestContext, VrfContext};
 use crate::routes::outside_execution::signature::sign_outside_execution;
 use crate::routes::outside_execution::types::{
-    Call, OutsideExecution, OutsideExecutionV2, SignedOutsideExecution,
+    get_calls, Call, OutsideExecution, OutsideExecutionV2, OutsideExecutionV3,
+    SignedOutsideExecution,
 };
 use crate::routes::outside_execution::vrf_types::{build_submit_random_call, RequestRandom};
 use crate::state::SharedState;
@@ -13,7 +14,7 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use cainome_cairo_serde::CairoSerde;
+use cainome_cairo_serde::{CairoSerde, ContractAddress};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use starknet::core::types::Felt;
@@ -23,7 +24,7 @@ use starknet::providers::ProviderError;
 use starknet::signers::{LocalWallet, SigningKey};
 use tracing::debug;
 
-pub const ANY_CALLER: Felt = felt!("0x414e595f43414c4c4552"); // ANY_CALLER
+pub const ANY_CALLER: ContractAddress = ContractAddress(felt!("0x414e595f43414c4c4552")); // ANY_CALLER
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OutsideExecutionRequest {
@@ -59,7 +60,7 @@ pub async fn vrf_outside_execution(
     if maybe_request_random_call.is_none() {
         return Err(Errors::NoRequestRandom);
     }
-    if position == outside_execution.calls().len() {
+    if position == get_calls(&outside_execution).len() {
         return Err(Errors::NoCallAfterRequestRandom);
     }
 
@@ -76,13 +77,26 @@ pub async fn vrf_outside_execution(
 
     let calls = vec![sumbit_random_call, execute_from_outside_call];
 
-    let signed_outside_execution = build_signed_outside_execution_v2(
-        vrf_context.vrf_account_address.0,
-        vrf_context.vrf_signer,
-        vrf_context.chain_id,
-        calls,
-    )
-    .await;
+    let signed_outside_execution = match &outside_execution {
+        OutsideExecution::V2(_) => {
+            build_signed_outside_execution_v2(
+                vrf_context.vrf_account_address.0,
+                vrf_context.vrf_signer,
+                vrf_context.chain_id,
+                calls,
+            )
+            .await
+        }
+        OutsideExecution::V3(_) => {
+            build_signed_outside_execution_v3(
+                vrf_context.vrf_account_address.0,
+                vrf_context.vrf_signer,
+                vrf_context.chain_id,
+                calls,
+            )
+            .await
+        }
+    };
 
     Ok(Json(OutsideExecutionResult {
         result: signed_outside_execution,
@@ -114,6 +128,35 @@ pub fn build_outside_execution_v2(calls: Vec<Call>) -> OutsideExecution {
         execute_before: now + 600,
         calls,
         nonce: SigningKey::from_random().secret_scalar(),
+    })
+}
+
+pub async fn build_signed_outside_execution_v3(
+    account_address: Felt,
+    signer: LocalWallet,
+    chain_id: Felt,
+    calls: Vec<Call>,
+) -> SignedOutsideExecution {
+    let outside_execution = build_outside_execution_v3(calls);
+
+    let signature =
+        sign_outside_execution(&outside_execution, chain_id, account_address, signer).await;
+
+    SignedOutsideExecution {
+        address: account_address,
+        outside_execution,
+        signature,
+    }
+}
+
+pub fn build_outside_execution_v3(calls: Vec<Call>) -> OutsideExecution {
+    let now = Utc::now().timestamp() as u64;
+    OutsideExecution::V3(OutsideExecutionV3 {
+        caller: ANY_CALLER,
+        execute_after: 0,
+        execute_before: now + 600,
+        calls,
+        nonce: (SigningKey::from_random().secret_scalar(), 0),
     })
 }
 
@@ -199,7 +242,7 @@ impl From<url::ParseError> for Errors {
 #[cfg(test)]
 pub mod test {
     use crate::routes::outside_execution::{
-        types::{Call, NonceChannel, OutsideExecution, OutsideExecutionV3, SignedOutsideExecution},
+        types::{Call, OutsideExecution, OutsideExecutionV3, SignedOutsideExecution},
         ANY_CALLER,
     };
     use starknet::macros::{felt, selector};
@@ -214,7 +257,7 @@ pub mod test {
                 execute_before: 3000000000,
                 calls: vec![
                     Call {
-                        to: felt!("0x888"), // VRF_ACCOUNT
+                        to: felt!("0x888").into(), // VRF_ACCOUNT
                         selector: selector!("request_random"),
                         calldata: vec![
                             felt!("0x111"), // CONSUMER
@@ -223,12 +266,12 @@ pub mod test {
                         ],
                     },
                     Call {
-                        to: felt!("0x111"),
+                        to: felt!("0x111").into(),
                         selector: selector!("dice"),
                         calldata: vec![],
                     },
                 ],
-                nonce: NonceChannel(
+                nonce: (
                     felt!("0x564b73282b2fb5f201cf2070bf0ca2526871cb7daa06e0e805521ef5d907b33"),
                     10,
                 ),
