@@ -1,3 +1,4 @@
+pub mod fmt;
 pub mod oracle;
 pub mod routes;
 pub mod state;
@@ -24,6 +25,9 @@ use std::sync::{Arc, RwLock};
 use tokio::signal;
 use tower_http::trace::TraceLayer;
 use tracing::debug;
+use tracing_subscriber::EnvFilter;
+
+use crate::fmt::LocalTime;
 
 #[derive(Parser, Debug)]
 #[command(version = version::generate_short(), long_version = version::generate_long(), about, long_about = None)]
@@ -100,8 +104,14 @@ pub async fn create_app(app_state: AppState) -> Router {
 async fn main() {
     let args = Args::parse();
 
+    let default_filter = EnvFilter::try_new("info");
+    let filter = EnvFilter::try_from_default_env()
+        .or(default_filter)
+        .expect("failed to parse log filter");
+
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
+        .with_env_filter(filter)
+        .with_timer(LocalTime::new())
         .init();
 
     let app_state = AppState::new().await;
