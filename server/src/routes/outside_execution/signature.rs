@@ -1,7 +1,6 @@
 // Delegates SNIP-12 message hashing to account_sdk:
 // https://github.com/cartridge-gg/controller-rs/blob/main/account_sdk/src/account/outside_execution.rs
 // https://github.com/cartridge-gg/controller-rs/blob/main/account_sdk/src/account/outside_execution_v2.rs
-// https://github.com/cartridge-gg/controller-rs/blob/main/account_sdk/src/account/outside_execution_v3.rs
 
 use account_sdk::hash::MessageHashRev1;
 use starknet::signers::{LocalWallet, Signer};
@@ -25,7 +24,7 @@ pub async fn sign_outside_execution(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::routes::outside_execution::types::{Call, OutsideExecutionV2, OutsideExecutionV3};
+    use crate::routes::outside_execution::types::{Call, OutsideExecutionV2};
     use cainome_cairo_serde::ContractAddress;
     use starknet::macros::{felt, selector};
     use starknet::signers::SigningKey;
@@ -67,16 +66,6 @@ mod tests {
         })
     }
 
-    fn test_outside_execution_v3() -> OutsideExecution {
-        OutsideExecution::V3(OutsideExecutionV3 {
-            caller: TEST_CALLER,
-            nonce: (felt!("0x1"), 0),
-            execute_after: 0,
-            execute_before: 3000000000,
-            calls: test_calls(),
-        })
-    }
-
     #[tokio::test]
     async fn sign_v2_produces_valid_signature() {
         let oe = test_outside_execution_v2();
@@ -91,23 +80,6 @@ mod tests {
         assert!(
             starknet_crypto::verify(&public_key, &hash, &sig[0], &sig[1]).unwrap(),
             "V2 signature should be valid"
-        );
-    }
-
-    #[tokio::test]
-    async fn sign_v3_produces_valid_signature() {
-        let oe = test_outside_execution_v3();
-        let sig =
-            sign_outside_execution(&oe, TEST_CHAIN_ID, TEST_SIGNER_ADDRESS, test_signer()).await;
-
-        assert_eq!(sig.len(), 2, "signature should have r and s components");
-
-        let hash = oe.get_message_hash_rev_1(TEST_CHAIN_ID, TEST_SIGNER_ADDRESS);
-        let public_key = test_signing_key().verifying_key().scalar();
-
-        assert!(
-            starknet_crypto::verify(&public_key, &hash, &sig[0], &sig[1]).unwrap(),
-            "V3 signature should be valid"
         );
     }
 }
