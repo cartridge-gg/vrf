@@ -105,10 +105,14 @@ async fn main() {
     let args = Args::parse();
 
     let default_filter = EnvFilter::try_new("info");
-    let filter =
-        EnvFilter::try_from_default_env().or(default_filter).expect("failed to parse log filter");
+    let filter = EnvFilter::try_from_default_env()
+        .or(default_filter)
+        .expect("failed to parse log filter");
 
-    tracing_subscriber::fmt().with_env_filter(filter).with_timer(LocalTime::new()).init();
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_timer(LocalTime::new())
+        .init();
 
     let app_state = AppState::new().await;
     let app = create_app(app_state).await;
