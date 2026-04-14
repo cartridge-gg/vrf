@@ -3,7 +3,6 @@ use cainome_cairo_serde::ContractAddress;
 use serde::{Deserialize, Serialize};
 use stark_vrf::StarkCurve;
 use starknet::{
-    core::utils::cairo_short_string_to_felt,
     providers::{jsonrpc::HttpTransport, JsonRpcClient, Url},
     signers::LocalWallet,
 };
@@ -13,8 +12,8 @@ use crate::{routes::outside_execution::Errors, state::AppState};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RequestContext {
-    pub chain_id: String,
-    pub rpc_url: Option<String>,
+    pub chain_id: Felt,
+    pub rpc_url: Option<Url>,
 }
 
 #[derive(Debug)]
@@ -33,24 +32,29 @@ impl VrfContext {
         request_context: RequestContext,
         app_state: &AppState,
     ) -> Result<Self, Errors> {
-        let chain_id = cairo_short_string_to_felt(&request_context.chain_id)?;
+        use starknet::core::chain_id::{MAINNET, SEPOLIA};
+
+        let chain_id = request_context.chain_id;
 
         let rpc_url = match request_context.rpc_url {
             Some(rpc_url) => rpc_url,
+
+            None if request_context.chain_id == MAINNET => {
+                Url::parse("https://api.cartridge.gg/x/starknet/mainnet").unwrap()
+            }
+
+            None if request_context.chain_id == SEPOLIA => {
+                Url::parse("https://api.cartridge.gg/x/starknet/sepolia").unwrap()
+            }
+
             None => {
-                if request_context.chain_id.as_str() == "SN_MAIN" {
-                    "https://api.cartridge.gg/x/starknet/mainnet".into()
-                } else if request_context.chain_id.as_str() == "SN_SEPOLIA" {
-                    "https://api.cartridge.gg/x/starknet/sepolia".into()
-                } else {
-                    return Err(Errors::RequestContextError(
-                        "no rpc_url provided".to_owned(),
-                    ));
-                }
+                return Err(Errors::RequestContextError(
+                    "no rpc_url provided".to_owned(),
+                ))
             }
         };
 
-        let provider = JsonRpcClient::new(HttpTransport::new(Url::parse(&rpc_url)?));
+        let provider = JsonRpcClient::new(HttpTransport::new(rpc_url));
 
         Ok(VrfContext {
             chain_id,
