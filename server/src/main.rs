@@ -2,6 +2,7 @@ pub mod fmt;
 pub mod oracle;
 pub mod routes;
 pub mod state;
+pub mod telemetry;
 pub mod utils;
 pub mod version;
 
@@ -25,9 +26,8 @@ use std::sync::{Arc, RwLock};
 use tokio::signal;
 use tower_http::trace::TraceLayer;
 use tracing::debug;
-use tracing_subscriber::EnvFilter;
 
-use crate::fmt::LocalTime;
+use crate::telemetry::{OtelMakeSpan, OtlpConfig};
 
 #[derive(Parser, Debug)]
 #[command(version = version::generate_short(), long_version = version::generate_long(), about, long_about = None)]
@@ -51,6 +51,22 @@ pub struct Args {
     /// Account Private Key
     #[arg(long, required = true)]
     account_private_key: String,
+
+    /// Enable the OpenTelemetry Protocol (OTLP) trace exporter.
+    #[arg(long = "tracer.otlp")]
+    tracer_otlp: bool,
+
+    /// OTLP collector endpoint (defaults to `http://localhost:4317`).
+    #[arg(long = "tracer.otlp-endpoint", requires = "tracer_otlp", value_name = "URL")]
+    otlp_endpoint: Option<String>,
+}
+
+impl Args {
+    fn otlp_config(&self) -> Option<OtlpConfig> {
+        self.tracer_otlp.then(|| OtlpConfig {
+            endpoint: self.otlp_endpoint.clone(),
+        })
+    }
 }
 
 impl Default for Args {
@@ -61,6 +77,8 @@ impl Default for Args {
             account_address: "0x123".into(),
             account_private_key: "0x420".into(),
             secret_key: 420,
+            tracer_otlp: false,
+            otlp_endpoint: None,
         }
     }
 }
@@ -96,7 +114,7 @@ pub async fn create_app(app_state: AppState) -> Router {
         .route("/info", get(vrf_info))
         .route("/proof", post(vrf_proof))
         .route("/outside_execution", post(vrf_outside_execution))
-        .layer(TraceLayer::new_for_http())
+        .layer(TraceLayer::new_for_http().make_span_with(OtelMakeSpan))
         .with_state(shared_state)
 }
 
@@ -104,15 +122,7 @@ pub async fn create_app(app_state: AppState) -> Router {
 async fn main() {
     let args = Args::parse();
 
-    let default_filter = EnvFilter::try_new("info");
-    let filter = EnvFilter::try_from_default_env()
-        .or(default_filter)
-        .expect("failed to parse log filter");
-
-    tracing_subscriber::fmt()
-        .with_env_filter(filter)
-        .with_timer(LocalTime::new())
-        .init();
+    telemetry::init(args.otlp_config()).expect("failed to initialize telemetry");
 
     let app_state = AppState::new().await;
     let app = create_app(app_state).await;
@@ -128,6 +138,9 @@ async fn main() {
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();
+
+    // Flush any buffered OTLP spans before exiting.
+    telemetry::shutdown();
 }
 
 async fn shutdown_signal() {

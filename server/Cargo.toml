@@ -12,9 +12,15 @@ ark-ec = "0.4.2"
 axum = "0.8.4"
 serde = { version = "1.0.195", features = ["serde_derive"] }
 tokio = { version = "1.40", features = ["full"] }
-tower-http = { version = "0.5.0", features = ["trace", "cors"] }
+tower-http = { version = "0.6", features = ["trace", "cors"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing-opentelemetry = "0.31"
+opentelemetry = { version = "0.30", features = ["trace"] }
+opentelemetry_sdk = { version = "0.30", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.30", features = ["grpc-tonic"] }
+opentelemetry-http = "0.30"
+http = "1"
 prost = "0.12.3"
 stark-vrf = { git = "https://github.com/dojoengine/stark-vrf.git" }
 num = "0.4.3"
