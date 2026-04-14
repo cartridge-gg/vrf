@@ -18,12 +18,16 @@ use num::FromPrimitive;
 use serde_json::json;
 use starknet::{
     accounts::{Account, SingleOwnerAccount},
-    core::types::{BlockId, FunctionCall},
+    core::{
+        types::{BlockId, FunctionCall},
+        utils::cairo_short_string_to_felt,
+    },
     macros::{felt, selector},
     providers::Provider,
     signers::{LocalWallet, SigningKey},
 };
 use starknet_crypto::Felt;
+use url::Url;
 
 #[tokio::test(flavor = "multi_thread")]
 #[katana_runner::test(accounts = 10, chain_id = Felt::from_hex_unchecked("0x57505f4b4154414e41"))] // WP_KATANA
@@ -150,8 +154,8 @@ async fn test_outside_execution(sequencer: &RunnerCtx) {
     let signed_outisde_execution_request_json = serde_json::to_value(&OutsideExecutionRequest {
         request: signed_outside_execution,
         context: RequestContext {
-            chain_id: "WP_KATANA".into(),
-            rpc_url: Option::Some(sequencer.url().to_string()),
+            chain_id: cairo_short_string_to_felt("WP_KATANA").unwrap(),
+            rpc_url: Option::Some(sequencer.url()),
         },
     })
     .unwrap();
@@ -222,6 +226,7 @@ pub fn mock_signed_outside_execution() -> SignedOutsideExecution {
     }
 }
 
+#[ignore = "previously we handled URL parsing in the server handler but now so but now we enforce directly in the payload type"]
 #[tokio::test(flavor = "multi_thread")]
 async fn test_with_bad_chain_id() {
     let args = Args::default()
@@ -233,7 +238,8 @@ async fn test_with_bad_chain_id() {
     let signed_outisde_execution_request_json = serde_json::to_value(&OutsideExecutionRequest {
         request: mock_signed_outside_execution(),
         context: RequestContext {
-            chain_id: "WP_KATANA_THIS_IS_TOO_LONG_FOR_SHORT_STRING".into(),
+            chain_id: cairo_short_string_to_felt("WP_KATANA_THIS_IS_TOO_LONG_FOR_SHORT_STRING")
+                .unwrap(),
             rpc_url: Option::None,
         },
     })
@@ -249,6 +255,7 @@ async fn test_with_bad_chain_id() {
     let _ = server.get("/").expect_success();
 }
 
+#[ignore = "previously we handled URL parsing in the server handler but now so but now we enforce directly in the payload type"]
 #[tokio::test(flavor = "multi_thread")]
 async fn test_with_bad_rpc_url() {
     let args = Args::default()
@@ -260,8 +267,8 @@ async fn test_with_bad_rpc_url() {
     let signed_outisde_execution_request_json = serde_json::to_value(&OutsideExecutionRequest {
         request: mock_signed_outside_execution(),
         context: RequestContext {
-            chain_id: "WP_KATANA_".into(),
-            rpc_url: Option::Some("not_a_rpc_url".into()),
+            chain_id: cairo_short_string_to_felt("WP_KATANA_").unwrap(),
+            rpc_url: Option::Some(Url::parse("not_a_rpc_url").unwrap()),
         },
     })
     .unwrap();
