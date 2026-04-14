@@ -57,7 +57,11 @@ pub struct Args {
     tracer_otlp: bool,
 
     /// OTLP collector endpoint (defaults to `http://localhost:4317`).
-    #[arg(long = "tracer.otlp-endpoint", requires = "tracer_otlp", value_name = "URL")]
+    #[arg(
+        long = "tracer.otlp-endpoint",
+        requires = "tracer_otlp",
+        value_name = "URL"
+    )]
     otlp_endpoint: Option<String>,
 }
 
