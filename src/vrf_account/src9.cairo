@@ -11,8 +11,9 @@
 #[starknet::component]
 pub mod SRC9Component {
     use openzeppelin::account::extensions::src9::snip12_utils::OutsideExecutionStructHash;
-    use openzeppelin::account::extensions::src9::{OutsideExecution, interface};
-    use openzeppelin::account::interface::{ISRC6Dispatcher, ISRC6DispatcherTrait};
+    use openzeppelin::interfaces::account::accounts::{ISRC6Dispatcher, ISRC6DispatcherTrait};
+    use openzeppelin::interfaces::account::src9 as interface;
+    use openzeppelin::interfaces::account::src9::OutsideExecution;
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::introspection::src5::SRC5Component::InternalTrait as SRC5InternalTrait;
     use openzeppelin::utils::cryptography::snip12::{OffchainMessageHash, SNIP12Metadata};

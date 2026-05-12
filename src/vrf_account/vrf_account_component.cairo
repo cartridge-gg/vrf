@@ -63,14 +63,13 @@ pub mod VrfAccountComponent {
     use core::hash::{HashStateExTrait, HashStateTrait};
     use core::num::traits::Zero;
     use core::poseidon::{PoseidonTrait, poseidon_hash_span};
-    use openzeppelin::account::interface;
-    use openzeppelin::account::utils::{
-        execute_single_call, is_tx_version_valid, is_valid_stark_signature,
-    };
+    use openzeppelin::account::utils::{is_tx_version_valid, is_valid_stark_signature};
+    use openzeppelin::interfaces::account::accounts as interface;
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::introspection::src5::SRC5Component::{
         InternalTrait as SRC5InternalTrait, SRC5Impl,
     };
+    use openzeppelin::utils::execution::execute_single_call;
     use stark_vrf::Proof;
     use starknet::account::Call;
     use starknet::storage::{

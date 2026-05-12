@@ -5,9 +5,9 @@
 mod AccountMock {
     use openzeppelin::account::AccountComponent;
     use openzeppelin::account::extensions::SRC9Component;
+    use openzeppelin::interfaces::upgrades::IUpgradeable;
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::upgrades::UpgradeableComponent;
-    use openzeppelin::upgrades::interface::IUpgradeable;
     use starknet::ClassHash;
 
     component!(path: AccountComponent, storage: account, event: AccountEvent);

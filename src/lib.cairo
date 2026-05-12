@@ -34,6 +34,9 @@ pub use vrf_provider::vrf_provider_component::{
 
 pub mod types;
 pub use types::{PublicKey, Source};
+
+#[cfg(test)]
+pub mod test_helpers;
 // #[cfg(test)]
 // pub mod tests {
 //     pub mod common;

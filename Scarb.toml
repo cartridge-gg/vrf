@@ -13,10 +13,9 @@ keywords = ["cartridge", "starknet", "vrf"]
 [dependencies]
 starknet = "^2.12.1"
 stark_vrf = "0.1.1"
-openzeppelin = "2.0.0"
+openzeppelin = "3.0.0"
 
 [dev-dependencies]
-openzeppelin_testing = "6.3.0"
 snforge_std = "0.54.1"
 
 [[target.starknet-contract]]

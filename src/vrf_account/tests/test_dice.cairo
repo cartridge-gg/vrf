@@ -1,5 +1,5 @@
-use openzeppelin::account::extensions::src9::OutsideExecution;
-use openzeppelin::account::interface::{ISRC6Dispatcher, ISRC6DispatcherTrait};
+use openzeppelin::interfaces::account::accounts::{ISRC6Dispatcher, ISRC6DispatcherTrait};
+use openzeppelin::interfaces::account::src9::OutsideExecution;
 use snforge_std::{
     CheatSpan, cheat_signature, cheat_transaction_hash, start_cheat_caller_address,
     start_cheat_max_fee,
