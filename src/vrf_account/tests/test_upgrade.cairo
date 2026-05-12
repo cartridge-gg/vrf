@@ -1,11 +1,10 @@
 use cartridge_vrf::mocks::vrf_consumer_mock::IVrfConsumerMockDispatcher;
-use openzeppelin::upgrades::interface::{
+use cartridge_vrf::test_helpers::{AsAddressImpl, OWNER, declare_and_deploy_at};
+use openzeppelin::interfaces::upgrades::{
     IUpgradeAndCallDispatcher, IUpgradeAndCallDispatcherTrait, IUpgradeableDispatcher,
     IUpgradeableDispatcherTrait,
 };
 use openzeppelin::utils::serde::SerializedAppend;
-use openzeppelin_testing::constants::{AsAddressImpl, OWNER};
-use openzeppelin_testing::deployment::declare_and_deploy_at;
 use snforge_std::{
     CheatSpan, DeclareResultTrait, cheat_caller_address, declare, load, map_entry_address,
     start_cheat_block_timestamp_global, start_cheat_caller_address, start_cheat_chain_id_global,

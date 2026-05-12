@@ -5,8 +5,8 @@
 pub mod VrfProviderUpgrader {
     use cartridge_vrf::vrf_provider::vrf_provider_component::VrfProviderComponent;
     use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::interfaces::upgrades::{IUpgradeAndCall, IUpgradeable};
     use openzeppelin::upgrades::UpgradeableComponent;
-    use openzeppelin::upgrades::interface::{IUpgradeAndCall, IUpgradeable};
     use starknet::{ClassHash, ContractAddress};
     use crate::PublicKey;
 

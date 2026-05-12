@@ -3,9 +3,9 @@
 
 #[starknet::contract(account)]
 mod VrfAccount {
+    use openzeppelin::interfaces::upgrades::{IUpgradeAndCall, IUpgradeable};
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::upgrades::UpgradeableComponent;
-    use openzeppelin::upgrades::interface::{IUpgradeAndCall, IUpgradeable};
     use starknet::ClassHash;
     use crate::vrf_account::src9::SRC9Component;
     use crate::vrf_account::vrf_account_component::VrfAccountComponent;
